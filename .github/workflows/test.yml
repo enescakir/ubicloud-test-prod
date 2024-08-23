@@ -1,0 +1,26 @@
+name: Test Ubicloud Prod Runners
+
+on:
+  push:
+    branches: [test-upterm]
+  
+jobs:
+  test:
+    strategy:
+      # max-parallel: 1
+      matrix:
+        runs-on: [ubicloud]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: ip a
+        run: ip a
+
+      - name: resolvectl status
+        run: resolvectl status
+
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+  
