@@ -1,0 +1,30 @@
+name: Test Ubicloud Prod Runners
+
+on:
+  push:
+    branches:
+      - check-azure-cli
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [
+          ubicloud-standard-2-ubuntu-2204, ubicloud-standard-2-ubuntu-2404,
+          ubuntu-22.04, ubuntu-24.04
+        ]
+    runs-on: ${{ matrix.runs-on }}
+    name: ${{ matrix.runs-on }}
+    steps:
+      - run: python3 --version
+      - run: python --version
+      - run: |
+          sudo find /opt/az -name '*.pyc' -print
+          sudo find /opt/az/lib/python3.12/site-packages/knack -name '*.pyc' -delete
+      - run: az version
+      - run: az upgrade --yes
+      - run: az version
+      - run: ls -lah /opt/az/bin
+      - run: /opt/az/bin/python3 --version
+      - run: az extension add --name account --debug
