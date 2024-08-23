@@ -1,0 +1,36 @@
+name: Test Ubicloud Prod Runners
+
+on:
+  push:
+    branches: [main]
+  # schedule:
+  #   - cron: '0 * * * *'
+  
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubuntu-latest, ubicloud]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: ip a
+        run: ip a
+      
+      - name: printenv
+        run: printenv
+    
+      # - name: nslookup builds.hex.pm
+      #   continue-on-error: true
+      #   run: nslookup builds.hex.pm
+
+      # - uses: erlef/setup-beam@v1.18.1
+      #   with:
+      #     version-file: .tool-versions
+      #     version-type: strict
+      #     hexpm-mirrors: |
+      #       https://builds.hex.pm
+  
