@@ -1,0 +1,51 @@
+name: Test Ubicloud Prod Runners
+
+on:
+  push:
+    branches: [main]
+  # schedule:
+  #   - cron: '0 * * * *'
+  
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubuntu-22.04, ubicloud-standard-4, ubicloud-standard-4-arm, ubuntu-22.04-arm]
+    runs-on: ${{ matrix.runs-on }}
+    name: ${{ matrix.runs-on }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: ip a
+        run: ip a
+      
+      - name: printenv
+        run: printenv
+      
+      - run: nproc
+  
+      - run: lscpu
+
+      - run: cat /proc/cpuinfo
+
+      - run: df -h
+    
+      - name: Benchmark
+        run: |
+          curl -sL https://yabs.sh | bash -s -- -r -w benchmark_results.json          
+          echo "# YABS benchmark results" > benchmark_results.md
+          jq -r 'def markdown(key; value): if (value | type) == "object" then "## \(key)\n| " + (value | to_entries | map(.key) | join(" | ")) + " |\n| " + (value | to_entries | map("---") | join(" | ")) + " |\n| " + (value | to_entries | map(.value | tostring) | join(" | ")) + " |" elif (value | type) == "array" and (value | length > 0 and (.[0] | type) == "object") then "## \(key)\n| " + (value[0] | to_entries | map(.key) | join(" | ")) + " |\n| " + (value[0] | to_entries | map("---") | join(" | ")) + " |\n" + (value | map("| " + (to_entries | map(.value | tostring) | join(" | ")) + " |") | join("\n")) elif (value | type) == "array" then "## \(key)\n" + (value | map(markdown("Item"; .)) | join("\n")) else "### \(key)\n```\n\(value)\n```" end; to_entries | map(markdown(.key; .value)) | join("\n")' benchmark_results.json >> benchmark_results.md
+          cat benchmark_results.md >> $GITHUB_STEP_SUMMARY
+
+      # - name: nslookup builds.hex.pm
+      #   continue-on-error: true
+      #   run: nslookup builds.hex.pm
+
+      # - uses: erlef/setup-beam@v1.18.1
+      #   with:
+      #     version-file: .tool-versions
+      #     version-type: strict
+      #     hexpm-mirrors: |
+      #       https://builds.hex.pm
