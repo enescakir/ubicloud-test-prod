@@ -1,3 +1,11 @@
-FROM node:22-slim
+FROM golang:1.22
 
-RUN apt update -qq && apt install -y --no-install-recommends openssl tini && apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+WORKDIR /usr/src/app
+
+COPY . .
+
+RUN go get github.com/ericlagergren/decimal
+
+RUN go build -v -o /usr/local/bin/mockserver .
+
+ENTRYPOINT ["mockserver"]

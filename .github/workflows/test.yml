@@ -2,33 +2,35 @@ name: Test Ubicloud Prod Runners
 
 on:
   push:
-    branches: [main]
-  schedule:
-    - cron: '10 * * * *'
-  
+    branches: [check-dns]
+ 
 jobs:
   test:
     strategy:
       # max-parallel: 1
       matrix:
-        runs-on: [ubicloud, ubicloud, ubicloud, ubicloud, ubicloud]
+        runs-on: [ubicloud, ubicloud, ubicloud, ubicloud, ubicloud, ubicloud, ubicloud, ubicloud, ubicloud, ubicloud]
+        # runs-on: [ubicloud]
     runs-on: ${{ matrix.runs-on }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: docker info
-        run: docker info
+      # - name: resolvectl status
+      #   run: resolvectl status
 
-      - name: ip a
-        run: ip a
+      # - name: change DNS provider from Quad9 to Cloudflare
+      #   run: |
+      #     sudo mkdir -p /etc/systemd/resolved.conf.d
+      #     echo "[Resolve]
+      #     DNS=9.9.9.9 149.112.112.112 2620:fe::fe 2620:fe::9" | sudo tee /etc/systemd/resolved.conf.d/Ubicloud.conf
+      #     sudo systemctl restart systemd-resolved.service
 
-      - name: resolvectl status
-        run: resolvectl status
+      # - name: resolvectl status
+      #   run: resolvectl status
 
-      - name: docker run debian:bookworm-slim cat /etc/resolv.conf
-        run: docker run debian:bookworm-slim cat /etc/resolv.conf
-
-      - name: docker
-        run: docker build . -t test
+      - name: docker build
+        run: docker build -t example .
+ 
+        
 
