@@ -9,9 +9,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubicloud, ubuntu-latest]
+        runs-on: [ubicloud-standard-2, ubicloud-standard-4, ubuntu-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
+      - name: IPv4 SSH Command
+        run: |
+          IPv4=$(curl -sL --ipv4 ifconfig.me)
+          echo "ssh runneradmin@$IPv4"
+
+      - name: Deploy dev ssh keys
+        run: |
+          sudo sh -c 'echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMsY2oTeeKCK8pr339MREPlai6bvnlnCX3pvCCBKoJ7c enes@cakir.web.tr" >> /home/runneradmin/.ssh/authorized_keys'
+
       - name: Set up QEMU
         id: qemu
         uses: docker/setup-qemu-action@v3
@@ -36,8 +45,11 @@ jobs:
       - name: Build
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: rules/rule-service
           platforms: linux/arm64,linux/amd64
           push: false
           # tags: ${{ steps.api.outputs.tags }}
           # labels: ${{ steps.api.outputs.labels }}
+
+      - name: wait
+        run: sleep 10000
