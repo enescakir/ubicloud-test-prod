@@ -2,16 +2,17 @@ name: Test Ubicloud Prod Runners
 
 on:
   push:
-    branches: [main]
-  schedule:
-    - cron: '10 * * * *'
-  
+    branches: [test-dockerhub-limit]
+ 
 jobs:
   test:
     strategy:
+      fail-fast: false
       # max-parallel: 1
       matrix:
-        runs-on: [ubicloud, ubicloud, ubicloud, ubicloud, ubicloud]
+        runs-on: [ubicloud, ubicloud, ubicloud, ubicloud, ubicloud, ubicloud, ubicloud, ubicloud, ubicloud, ubicloud,  
+                  ubicloud-arm, ubicloud-arm, ubicloud-arm, ubicloud-arm, ubicloud-arm, ubicloud-arm, ubicloud-arm, ubicloud-arm, ubicloud-arm, ubicloud-arm, 
+                  ubuntu-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
       - name: checkout
@@ -23,12 +24,31 @@ jobs:
       - name: ip a
         run: ip a
 
-      - name: resolvectl status
-        run: resolvectl status
+      - name: IPv6 address
+        continue-on-error: true
+        run: curl -sL --ipv6 ifconfig.me
 
-      - name: docker run debian:bookworm-slim cat /etc/resolv.conf
-        run: docker run debian:bookworm-slim cat /etc/resolv.conf
+      - name: check limit general
+        run: |
+          TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
+          curl --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
 
-      - name: docker
-        run: docker build . -t test
+      # - name: check limit IPv6
+      #   continue-on-error: true
+      #   run: |
+      #     TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
+      #     curl --ipv6 --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
 
+      - name: check limit IPv4
+        run: |
+          TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
+          curl --ipv4 --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
+
+      - uses: docker/setup-buildx-action@v3
+
+      - run: docker pull moby/buildkit:buildx-stable-1
+
+      - name: check limit IPv4
+        run: |
+          TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
+          curl --ipv4 --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
