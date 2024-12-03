@@ -1,0 +1,35 @@
+name: Test save cache functionalities
+
+on:
+  push:
+    branches: [multiple-cache]
+
+env:
+  CACHE_VERSION: ${{ github.run_id }}-${{ github.run_attempt }}
+
+jobs:
+  save:
+    strategy:
+      fail-fast: false
+      matrix:
+        index: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+    runs-on: ubicloud
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate folders and files to cache
+        run: |
+          mkdir myfolder
+          dd if=/dev/urandom of=myfolder/file1.txt bs=1M count=10
+          mkdir myfolder2
+          dd if=/dev/urandom of=myfolder2/file1.txt bs=1M count=15
+
+      - name: Save folders and files
+        uses: actions/cache/save@main
+        with:
+          path: |
+            myfolder
+            myfolder2
+          key: cached_folders-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.index }}
+
