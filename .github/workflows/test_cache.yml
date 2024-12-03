@@ -1,0 +1,239 @@
+name: Test save cache functionalities
+
+on:
+  push:
+    branches: [test-cache]
+
+env:
+  CACHE_VERSION: ${{ github.run_id }}-${{ github.run_attempt }}
+
+jobs:
+  save:
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubicloud]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create version file trigger fresh cache
+        run: |
+          echo "Cache version: ${{ env.CACHE_VERSION }}" >> version.txt
+
+      - name: Setup python
+        uses: ubicloud/setup-python@main
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+          cache-dependency-path: |
+            python/requirements.txt
+            version.txt
+
+      - run: pip install -r python/requirements.txt
+
+      - name: Setup go
+        uses: ubicloud/setup-go@main
+        with:
+          go-version: '1.22'
+          cache-dependency-path: |
+            go/go.sum
+            version.txt
+
+      - name: Setup Ruby
+        uses: ubicloud/setup-ruby@master
+        env:
+          BUNDLE_GEMFILE: ./ruby/Gemfile
+        with:
+          ruby-version: '3.2.6'
+          bundler-cache: true
+          cache-version: ${{ env.CACHE_VERSION }}
+
+      - name: Cache Rust dependencies
+        uses: ubicloud/rust-cache@master
+        with:
+          workspaces: ./rust
+
+      - name: Build Rust project
+        run: cargo build
+        working-directory: ./rust
+
+      - name: ubicloud/setup-node
+        uses: ubicloud/setup-node@main
+        with:
+          cache: "npm"
+          cache-dependency-path: |
+            node/package-lock.json
+            version.txt
+
+      - name: Install Node requirements
+        run: cd node && npm ci
+
+      - name: ubicloud/setup-java
+        uses: ubicloud/setup-java@main
+        with:
+          distribution: "temurin"
+          java-version: "11"
+          cache: gradle
+          cache-dependency-path: |
+            java/build.gradle
+            version.txt
+
+      - name: Install Java requirements
+        run: gradle downloadDependencies --no-daemon -p java
+
+      - name: Generate folders and files to cache
+        run: |
+          mkdir myfolder
+          dd if=/dev/urandom of=myfolder/file1.txt bs=1M count=10
+          mkdir myfolder2
+          dd if=/dev/urandom of=myfolder2/file1.txt bs=1M count=15
+
+      - name: Save folders and files
+        uses: ubicloud/cache/save@main
+        with:
+          path: |
+            myfolder
+            myfolder2
+          key: cached_folders-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.runs-on }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./docker
+          push: false
+          cache-to: type=gha,mode=max
+
+  restore:
+    needs: save
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubicloud]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create version file trigger fresh cache
+        run: |
+          echo "Cache version: ${{ env.CACHE_VERSION }}" >> version.txt
+
+      - name: Setup python with cache
+        id: setup-python
+        uses: ubicloud/setup-python@main
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+          cache-dependency-path: |
+            python/requirements.txt
+            version.txt
+
+      - name: Error if cache doesn't hit for setup-python
+        if: steps.setup-python.outputs.cache-hit == 'false'
+        run: |
+          echo "Cache didn't hit for setup-python"
+          exit 1
+
+      - name: Setup go with cache
+        uses: ubicloud/setup-go@main
+        id: setup-go
+        with:
+          go-version: '1.22'
+          cache-dependency-path: |
+            go/go.sum
+            version.txt
+
+      - name: Error if cache doesn't hit for setup-go
+        if: steps.setup-go.outputs.cache-hit == 'false'
+        run: |
+          echo "Cache didn't hit for setup-go"
+          exit 1
+
+      - name: Setup Ruby with cache
+        id: setup-ruby
+        uses: ubicloud/setup-ruby@master
+        env:
+          BUNDLE_GEMFILE: ./ruby/Gemfile
+        with:
+          ruby-version: '3.2.6'
+          bundler-cache: true
+          cache-version: ${{ env.CACHE_VERSION }}
+
+      - name: Error if cache doesn't hit for setup-ruby
+        if: steps.setup-ruby.outputs.cache-hit == 'false'
+        run: |
+          echo "Cache didn't hit for setup-ruby"
+          exit 1
+
+      - name: Cache Rust dependencies
+        id: rust-cache
+        uses: ubicloud/rust-cache@master
+        with:
+          workspaces: ./rust
+
+      # - name: Error if cache doesn't hit for rust-cache
+      #   if: steps.rust-cache.outputs.cache-hit == 'false'
+      #   run: |
+      #     echo "Cache didn't hit for rust-cache"
+      #     exit 1
+
+      - name: ubicloud/setup-node
+        uses: ubicloud/setup-node@main
+        with:
+          cache: "npm"
+          cache-dependency-path: |
+            node/package-lock.json
+            version.txt
+
+      - name: Install Node requirements
+        run: cd node && npm ci
+
+      - name: ubicloud/setup-java
+        uses: ubicloud/setup-java@main
+        with:
+          distribution: "temurin"
+          java-version: "11"
+          cache: gradle
+          cache-dependency-path: |
+            java/build.gradle
+            version.txt
+
+      - name: Install Java requirements
+        run: gradle downloadDependencies --no-daemon -p java
+
+      - name: Restore folders and files
+        id: restore-file
+        uses: ubicloud/cache/restore@main
+        with:
+          path: |
+            myfolder
+            myfolder2
+          key: cached_folders-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.runs-on }}
+
+      - name: Error if cache doesn't hit for restore-file
+        if: steps.restore-file.outputs.cache-hit == 'false'
+        run: |
+          echo "Cache didn't hit for restore-cache"
+          exit 1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        id: build-docker
+        uses: docker/build-push-action@v4
+        with:
+          context: ./docker
+          push: false
+          cache-from: type=gha
+
+      - name: Error if cache doesn't hit for build-docker
+        if: steps.build-docker.outputs.cache-hit == 'false'
+        run: |
+          echo "Cache didn't hit for build-docker"
+          exit 1
