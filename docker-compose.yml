@@ -1,0 +1,22 @@
+services:
+  app:
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: Dockerfile
+  db:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: test
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -h localhost" ]
+      interval: 5s
+      timeout: 20s
+      retries: 20
+      start_period: 30s
+  
