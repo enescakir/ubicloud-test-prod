@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-22.04, ubicloud-standard-4, ubicloud-standard-4-arm, ubuntu-22.04-arm]
+        runs-on: [ubuntu-22.04, ubuntu-24.04, ubicloud-standard-4]
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
     steps:
@@ -32,12 +32,18 @@ jobs:
 
       - run: df -h
     
-      - name: Benchmark
-        run: |
-          curl -sL https://yabs.sh | bash -s -- -r -w benchmark_results.json          
-          echo "# YABS benchmark results" > benchmark_results.md
-          jq -r 'def markdown(key; value): if (value | type) == "object" then "## \(key)\n| " + (value | to_entries | map(.key) | join(" | ")) + " |\n| " + (value | to_entries | map("---") | join(" | ")) + " |\n| " + (value | to_entries | map(.value | tostring) | join(" | ")) + " |" elif (value | type) == "array" and (value | length > 0 and (.[0] | type) == "object") then "## \(key)\n| " + (value[0] | to_entries | map(.key) | join(" | ")) + " |\n| " + (value[0] | to_entries | map("---") | join(" | ")) + " |\n" + (value | map("| " + (to_entries | map(.value | tostring) | join(" | ")) + " |") | join("\n")) elif (value | type) == "array" then "## \(key)\n" + (value | map(markdown("Item"; .)) | join("\n")) else "### \(key)\n```\n\(value)\n```" end; to_entries | map(markdown(.key; .value)) | join("\n")' benchmark_results.json >> benchmark_results.md
-          cat benchmark_results.md >> $GITHUB_STEP_SUMMARY
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: test/app:latest
 
       # - name: nslookup builds.hex.pm
       #   continue-on-error: true

@@ -1,3 +1,3 @@
-FROM node:22-slim
+FROM debian:bullseye-slim
 
-RUN apt update -qq && apt install -y --no-install-recommends openssl tini && apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get update && apt-get install -y --no-install-recommends netcat ca-certificates && rm -rf /var/lib/apt/lists/*
