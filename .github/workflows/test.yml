@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-22.04, ubuntu-24.04, ubicloud-standard-2, ubicloud-standard-2-arm, ubicloud-standard-2-ubuntu-2404]
+        runs-on: [ubicloud, ubicloud-standard-2]
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
     steps:
@@ -32,25 +32,25 @@ jobs:
 
       - run: df -h
 
-      - name: check sqlite version
-        run: sqlite3 --version
+      - name: check chrome drive version
+        run: chromedriver --version
+
+      - run: ls -lah /usr/local/share/chromedriver-linux64
     
-      - name: remove existing sqlite3
-        run: sudo apt-get remove -y sqlite3
-
-      - name: install sqlite3 3.38 from source
+      - name: install chrome drive 132.0.6834.159
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential
-          wget https://www.sqlite.org/2022/sqlite-autoconf-3380000.tar.gz
-          tar xvfz sqlite-autoconf-3380000.tar.gz
-          cd sqlite-autoconf-3380000
-          ./configure
-          make
-          sudo make install
+          curl -O https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chromedriver-linux64.zip
+          sudo rm -rf /usr/local/share/chromedriver-linux64
+          sudo rm -rf /usr/bin/chromedriver
+          sudo unzip chromedriver-linux64.zip -d /usr/local/share
+          sudo chmod +x /usr/local/share/chromedriver-linux64/chromedriver
+          sudo ln -s /usr/local/share/chromedriver-linux64/chromedriver /usr/bin/
+          
+      - name: check chrome drive version
+        run: chromedriver --version
 
-      - name: check sqlite version
-        run: sqlite3 --version
+      - run: ls -lah /usr/local/share/chromedriver-linux64
+
         # - name: Set up QEMU
       #   uses: docker/setup-qemu-action@v3
       #   with:
