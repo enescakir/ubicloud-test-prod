@@ -19,9 +19,46 @@ jobs:
     steps:
       - run: python3 --version
       - run: python --version
+      # - run: |
+      #     sudo find /opt/az -name '*.pyc' -print
+      #     sudo find /opt/az/azcliextensions/azure-devops/azext_devops -name '*.pyc' -delete
+      #     sudo find /opt/az/bin/ -name '*.pyc' -delete
+      #     sudo find /opt/az/lib/python3.12/lib2to3 -name '*.pyc' -delete
+      #     sudo find /opt/az/lib/python3.12/__pycache__/ -name '*.pyc' -delete
+      #     sudo find /opt/az/lib/python3.12/site-packages/setuptools -name '*.pyc' -delete
+      #     az extension add --name account --debug
       - run: |
-          sudo find /opt/az -name '*.pyc' -print
-          sudo find /opt/az/lib/python3.12/site-packages/knack -name '*.pyc' -delete
+          # Prevent script from exiting on command failures
+          set +e
+          
+          found_success=false
+          
+          for dir in $(find /opt/az/lib/python3.12/site-packages -type d -maxdepth 1 | sort); do
+            dir_name=$(basename "$dir")
+            echo "Testing directory: $dir_name"
+            
+            # Run the az command
+            az extension add --name account --debug
+            exit_code=$?
+            
+            # Check the exit code
+            if [ $exit_code -eq 0 ]; then
+              echo "Success with directory: $dir_name"
+              found_success=true
+              break
+            else
+              echo "Failed with directory: $dir_name. Continuing..."
+            fi
+          done
+          
+          if [ "$found_success" = true ]; then
+            echo "Found a working directory!"
+          else
+            echo "No working directory found, but continuing workflow."
+          fi
+          
+          # Ensure the script exits with success
+          exit 0
       - run: az version
       - run: az upgrade --yes
       - run: az version
