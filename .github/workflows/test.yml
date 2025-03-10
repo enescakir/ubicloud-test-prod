@@ -33,10 +33,15 @@ jobs:
           
           found_success=false
           
-          for dir in $(find /opt/az/lib/python3.12 -type d -maxdepth 1 | sort); do
+          for dir in $(find /opt/az/lib/python3.12/site-packages/pip/_vendor/ -maxdepth 1 -type d | sort); do
             dir_name=$(basename "$dir")
+            if [ "$dir_name" = "_vendor" ]; then
+              continue
+            fi
             echo "Testing directory: $dir_name"
-            
+            sudo find "/opt/az/lib/python3.12/site-packages/pip/_vendor/$dir_name" -name '*.pyc' -print
+            sudo find "/opt/az/lib/python3.12/site-packages/pip/_vendor/$dir_name" -name '*.pyc' -delete
+
             # Run the az command
             az extension add --name account --debug
             exit_code=$?
