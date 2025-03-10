@@ -64,15 +64,15 @@ jobs:
           
       #     # Ensure the script exits with success
       #     exit 0
-      - run: az version
-      - run: az upgrade --yes
-      - run: az version
-      - run: ls -lah /opt/az/bin
-      - run: /opt/az/bin/python3 --version
+      # - run: az version
+      # - run: az upgrade --yes
+      # - run: az version
+      # - run: ls -lah /opt/az/bin
+      # - run: /opt/az/bin/python3 --version
       - run: ls -lah /opt/az/lib/python3.12/site-packages/pip/_vendor/rich/__pycache__/_emoji_codes.cpython-312.pyc
-      - run: |
-          md5=($(md5sum /opt/az/lib/python3.12/site-packages/pip/_vendor/rich/__pycache__/_emoji_codes.cpython-312.pyc))
-          echo $md5
-      - run: sudo rm -rf /opt/az/lib/python3.12/site-packages/pip/_vendor/rich/__pycache__/_emoji_codes.cpython-312.pyc
-      - run: az version
+      # - run: |
+      #     md5=($(md5sum /opt/az/lib/python3.12/site-packages/pip/_vendor/rich/__pycache__/_emoji_codes.cpython-312.pyc))
+      #     echo $md5
+      # - run: sudo rm -rf /opt/az/lib/python3.12/site-packages/pip/_vendor/rich/__pycache__/_emoji_codes.cpython-312.pyc
       - run: az extension add --name account --debug
+      - run: az version
