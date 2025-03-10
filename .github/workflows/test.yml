@@ -33,7 +33,7 @@ jobs:
           
           found_success=false
           
-          for dir in $(find /opt/az/lib/python3.12/site-packages -type d -maxdepth 1 | sort); do
+          for dir in $(find /opt/az/lib/python3.12 -type d -maxdepth 1 | sort); do
             dir_name=$(basename "$dir")
             echo "Testing directory: $dir_name"
             
