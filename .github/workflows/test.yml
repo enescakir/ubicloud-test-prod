@@ -27,46 +27,48 @@ jobs:
       #     sudo find /opt/az/lib/python3.12/__pycache__/ -name '*.pyc' -delete
       #     sudo find /opt/az/lib/python3.12/site-packages/setuptools -name '*.pyc' -delete
       #     az extension add --name account --debug
-      - run: |
-          # Prevent script from exiting on command failures
-          set +e
+      # - run: |
+      #     # Prevent script from exiting on command failures
+      #     set +e
           
-          found_success=false
+      #     found_success=false
           
-          for dir in $(find /opt/az/lib/python3.12/site-packages/pip/_vendor/ -maxdepth 1 -type d | sort); do
-            dir_name=$(basename "$dir")
-            if [ "$dir_name" = "_vendor" ]; then
-              continue
-            fi
-            echo "Testing directory: $dir_name"
-            sudo find "/opt/az/lib/python3.12/site-packages/pip/_vendor/$dir_name" -name '*.pyc' -print
-            sudo find "/opt/az/lib/python3.12/site-packages/pip/_vendor/$dir_name" -name '*.pyc' -delete
+      #     for dir in $(find /opt/az/lib/python3.12/site-packages/pip/_vendor/ -maxdepth 1 -type d | sort); do
+      #       dir_name=$(basename "$dir")
+      #       if [ "$dir_name" = "_vendor" ]; then
+      #         continue
+      #       fi
+      #       echo "Testing directory: $dir_name"
+      #       sudo find "/opt/az/lib/python3.12/site-packages/pip/_vendor/$dir_name" -name '*.pyc' -print
+      #       sudo find "/opt/az/lib/python3.12/site-packages/pip/_vendor/$dir_name" -name '*.pyc' -delete
 
-            # Run the az command
-            az extension add --name account --debug
-            exit_code=$?
+      #       # Run the az command
+      #       az extension add --name account --debug
+      #       exit_code=$?
             
-            # Check the exit code
-            if [ $exit_code -eq 0 ]; then
-              echo "Success with directory: $dir_name"
-              found_success=true
-              break
-            else
-              echo "Failed with directory: $dir_name. Continuing..."
-            fi
-          done
+      #       # Check the exit code
+      #       if [ $exit_code -eq 0 ]; then
+      #         echo "Success with directory: $dir_name"
+      #         found_success=true
+      #         break
+      #       else
+      #         echo "Failed with directory: $dir_name. Continuing..."
+      #       fi
+      #     done
           
-          if [ "$found_success" = true ]; then
-            echo "Found a working directory!"
-          else
-            echo "No working directory found, but continuing workflow."
-          fi
+      #     if [ "$found_success" = true ]; then
+      #       echo "Found a working directory!"
+      #     else
+      #       echo "No working directory found, but continuing workflow."
+      #     fi
           
-          # Ensure the script exits with success
-          exit 0
+      #     # Ensure the script exits with success
+      #     exit 0
       - run: az version
       - run: az upgrade --yes
       - run: az version
       - run: ls -lah /opt/az/bin
       - run: /opt/az/bin/python3 --version
+      - run: sudo find /opt/az/lib/python3.12/site-packages/pip/_vendor/rich -name '*.pyc' 
+      - run: az version
       - run: az extension add --name account --debug
