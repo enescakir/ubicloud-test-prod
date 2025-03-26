@@ -19,6 +19,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
     steps:
+      - uses: actions/checkout@v4
       - run: openssl s_client -connect registry.npmjs.org:443
       - uses: actions/setup-node@v4
         with:
@@ -26,4 +27,5 @@ jobs:
       - run: node -e 'fetch("https://google.com").then(console.log, console.error)'
       - run: node -e 'fetch("https://registry.npmjs.org/@actions/github").then(console.log, console.error)'
       - run: npm install @actions/github
+      - run: node ssl-tester.js
     
