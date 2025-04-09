@@ -8,6 +8,9 @@ on:
   
 jobs:
   test:
+    # container:
+    #   image: ubuntu:latest
+      # options: --init
     strategy:
       fail-fast: false
       matrix:
@@ -17,6 +20,9 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+
+      - run: ps aux
+      - run: ps -ef --forest
 
       - name: ip a
         run: ip a
@@ -50,6 +56,11 @@ jobs:
         run: chromedriver --version
 
       - run: ls -lah /usr/local/share/chromedriver-linux64
+
+      - run: df -Th
+
+      - name: Find big files
+        run: sudo du -ah / | sort -rh | head -n 50
 
         # - name: Set up QEMU
       #   uses: docker/setup-qemu-action@v3
