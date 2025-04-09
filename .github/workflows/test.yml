@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubicloud, ubicloud-standard-2]
+        runs-on: [ubicloud]
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
     steps:
@@ -38,24 +38,29 @@ jobs:
 
       - run: df -h
 
-      - name: check chrome drive version
-        run: chromedriver --version
+      # - name: check chrome drive version
+      #   run: chromedriver --version
 
-      - run: ls -lah /usr/local/share/chromedriver-linux64
+      # - run: ls -lah /usr/local/share/chromedriver-linux64
     
-      - name: install chrome drive 132.0.6834.159
-        run: |
-          curl -O https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chromedriver-linux64.zip
-          sudo rm -rf /usr/local/share/chromedriver-linux64
-          sudo rm -rf /usr/bin/chromedriver
-          sudo unzip chromedriver-linux64.zip -d /usr/local/share
-          sudo chmod +x /usr/local/share/chromedriver-linux64/chromedriver
-          sudo ln -s /usr/local/share/chromedriver-linux64/chromedriver /usr/bin/
+      # - name: install chrome drive 132.0.6834.159
+      #   run: |
+      #     curl -O https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chromedriver-linux64.zip
+      #     sudo rm -rf /usr/local/share/chromedriver-linux64
+      #     sudo rm -rf /usr/bin/chromedriver
+      #     sudo unzip chromedriver-linux64.zip -d /usr/local/share
+      #     sudo chmod +x /usr/local/share/chromedriver-linux64/chromedriver
+      #     sudo ln -s /usr/local/share/chromedriver-linux64/chromedriver /usr/bin/
           
-      - name: check chrome drive version
-        run: chromedriver --version
+      # - name: check chrome drive version
+      #   run: chromedriver --version
 
-      - run: ls -lah /usr/local/share/chromedriver-linux64
+      # - run: ls -lah /usr/local/share/chromedriver-linux64
+
+      # - run: df -Th
+
+      # - name: Find big files
+      #   run: sudo du -ah / | sort -rh | head -n 50
 
       - run: df -Th
 
