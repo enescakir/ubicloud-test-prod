@@ -13,10 +13,20 @@ jobs:
           - ubicloud-standard-60
           - ubicloud-standard-60
           - ubicloud-standard-60
+          - ubicloud-standard-60
+          - ubicloud-standard-60
+          - ubicloud-standard-60
+          - ubicloud-standard-60
+          - ubicloud-standard-60
+          - ubicloud-standard-60
 
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
     steps:
+      - name: Install aria2
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y aria2
       - name: Download image
         run: |
-          curl -f -L10 -o image.raw "${{ secrets.TEST_IMAGE_SIGNED_URL }}"
+          aria2c -x 10 -s 10 -o image.raw --checksum=sha-256=d56989957a09ae101fb31d07d70547596d23c852749fa191212b365fc6c91274 "${{ secrets.TEST_IMAGE_SIGNED_URL }}"
