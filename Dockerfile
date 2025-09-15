@@ -1,3 +1,3 @@
-FROM debian:bullseye-slim
+FROM docker.io/library/nginx:1.29.0@sha256:3ab4ed065a1437cbbd45e65617b1285bdf6523c6bf56a121e00df41720e09a89
 
-RUN apt-get update && apt-get install -y --no-install-recommends netcat ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update

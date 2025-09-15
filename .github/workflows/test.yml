@@ -38,6 +38,8 @@ jobs:
 
       - run: df -h
 
+      - run: |
+          docker buildx build .
       # - name: check chrome drive version
       #   run: chromedriver --version
 
@@ -62,10 +64,10 @@ jobs:
       # - name: Find big files
       #   run: sudo du -ah / | sort -rh | head -n 50
 
-      - run: df -Th
+      # - run: df -Th
 
-      - name: Find big files
-        run: sudo du -ah / | sort -rh | head -n 50
+      # - name: Find big files
+      #   run: sudo du -ah / | sort -rh | head -n 50
 
         # - name: Set up QEMU
       #   uses: docker/setup-qemu-action@v3
