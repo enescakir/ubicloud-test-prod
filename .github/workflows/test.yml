@@ -16,15 +16,7 @@ jobs:
       matrix:
         runs-on:
           - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
     steps:
@@ -49,7 +41,7 @@ jobs:
       - run: df -h
 
       - run: |
-          docker buildx build .
+          docker pull ghcr.io/super-linter/super-linter:latest
       # - name: check chrome drive version
       #   run: chromedriver --version
 
