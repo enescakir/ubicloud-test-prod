@@ -16,7 +16,15 @@ jobs:
       matrix:
         runs-on:
           - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
           - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+
+          
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
     steps:
@@ -40,8 +48,8 @@ jobs:
 
       - run: df -h
 
-      - run: |
-          docker pull ghcr.io/super-linter/super-linter:latest
+      # - run: |
+      #     docker pull ghcr.io/super-linter/super-linter:latest
       # - name: check chrome drive version
       #   run: chromedriver --version
 
@@ -61,7 +69,7 @@ jobs:
 
       # - run: ls -lah /usr/local/share/chromedriver-linux64
 
-      # - run: df -Th
+      - run: df -Th
 
       # - name: Find big files
       #   run: sudo du -ah / | sort -rh | head -n 50
