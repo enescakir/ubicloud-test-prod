@@ -2,122 +2,30 @@ name: Test Ubicloud Prod Runners
 
 on:
   push:
-    branches: [main]
-  # schedule:
-  #   - cron: '0 * * * *'
+    branches: [backup-test]
   
 jobs:
-  test:
-    # container:
-    #   image: ubuntu:latest
-      # options: --init
-    strategy:
-      fail-fast: false
-      matrix:
-        runs-on:
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
+  set-runner:
+    timeout-minutes: 1
+    runs-on: test-test
+    outputs:
+      runner: ${{ steps.set-runner.outputs.runner }}
 
-          
-    runs-on: ${{ matrix.runs-on }}
-    name: ${{ matrix.runs-on }}
     steps:
-      - name: checkout
-        uses: actions/checkout@v4
+      - id: set-runner
+        run: |
+          echo "runner=ubuntu-latest" >> $GITHUB_OUTPUT
 
-      - run: ps aux
-      - run: ps -ef --forest
+  main-job:
+    if: always()
+    needs: set-runner
+    runs-on: ${{ needs.set-runner.outputs.runner && needs.set-runner.outputs.runner || 'ubicloud' }}
 
-      - name: ip a
-        run: ip a
-      
-      - name: printenv
-        run: printenv
-      
-      - run: nproc
-  
-      - run: lscpu
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
 
-      - run: cat /proc/cpuinfo
-
-      - run: df -h
-
-      # - run: |
-      #     docker pull ghcr.io/super-linter/super-linter:latest
-      # - name: check chrome drive version
-      #   run: chromedriver --version
-
-      # - run: ls -lah /usr/local/share/chromedriver-linux64
-    
-      # - name: install chrome drive 132.0.6834.159
-      #   run: |
-      #     curl -O https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chromedriver-linux64.zip
-      #     sudo rm -rf /usr/local/share/chromedriver-linux64
-      #     sudo rm -rf /usr/bin/chromedriver
-      #     sudo unzip chromedriver-linux64.zip -d /usr/local/share
-      #     sudo chmod +x /usr/local/share/chromedriver-linux64/chromedriver
-      #     sudo ln -s /usr/local/share/chromedriver-linux64/chromedriver /usr/bin/
-          
-      # - name: check chrome drive version
-      #   run: chromedriver --version
-
-      # - run: ls -lah /usr/local/share/chromedriver-linux64
-
-      - run: df -Th
-
-      # - name: Find big files
-      #   run: sudo du -ah / | sort -rh | head -n 50
-
-      # - run: df -Th
-
-      # - name: Find big files
-      #   run: sudo du -ah / | sort -rh | head -n 50
-
-        # - name: Set up QEMU
-      #   uses: docker/setup-qemu-action@v3
-      #   with:
-      #     # Using binfmt with updated QEMU image due to random compiler segfaults.
-      #     # Discussions about the issue:
-      #     #  * https://github.com/tonistiigi/binfmt/issues/215
-      #     #  * https://github.com/docker/setup-qemu-action/issues/188
-      #     #  * https://github.com/actions/runner-images/issues/11471
-      #     image: tonistiigi/binfmt:latest  
-
-      # - name: Set up Docker Buildx
-      #   uses: docker/setup-buildx-action@v3
-
-      # - name: Build and push
-      #   uses: docker/build-push-action@v6
-      #   with:
-      #     platforms: linux/amd64,linux/arm64
-      #     push: false
-      #     tags: test/app:latest
-
-      # - name: nslookup builds.hex.pm
-      #   continue-on-error: true
-      #   run: nslookup builds.hex.pm
-
-      # - uses: erlef/setup-beam@v1.18.1
-      #   with:
-      #     version-file: .tool-versions
-      #     version-type: strict
-      #     hexpm-mirrors: |
-      #       https://builds.hex.pm
+      - name: Run tests
+        run: |
+          echo "Running tests on ${{ needs.set-runner.outputs.runner }}"
+          echo "All tests passed!"
