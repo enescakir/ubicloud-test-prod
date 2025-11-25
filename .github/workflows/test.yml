@@ -16,25 +16,9 @@ jobs:
       matrix:
         runs-on:
           - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-4-ubuntu-2204
+          - ubicloud-standard-4-ubuntu-2404
 
           
     runs-on: ${{ matrix.runs-on }}
@@ -83,13 +67,8 @@ jobs:
 
       - run: df -Th
 
-      # - name: Find big files
-      #   run: sudo du -ah / | sort -rh | head -n 50
-
-      # - run: df -Th
-
-      # - name: Find big files
-      #   run: sudo du -ah / | sort -rh | head -n 50
+      - name: Find big files
+        run: sudo du -ah / | sort -rh | head -n 50
 
         # - name: Set up QEMU
       #   uses: docker/setup-qemu-action@v3
