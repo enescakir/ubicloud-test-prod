@@ -1,0 +1,92 @@
+name: Check AVX2 / AVX512 Support
+
+on:
+  push:
+    branches: [check-avx-cpu]
+  workflow_dispatch:
+
+jobs:
+  check-avx:
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on:
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+
+    runs-on: ${{ matrix.runs-on }}
+    name: ${{ matrix.runs-on }}
+    steps:
+      - name: Check CPU flags for AVX support
+        run: |
+          echo "=== CPU Model ==="
+          grep -m1 'model name' /proc/cpuinfo
+
+          echo ""
+          echo "=== AVX Instruction Set Support ==="
+          flags=$(grep -m1 'flags' /proc/cpuinfo)
+
+          check_flag() {
+            if echo "$flags" | grep -qw "$1"; then
+              echo "✅ $1: supported"
+            else
+              echo "❌ $1: NOT supported"
+            fi
+          }
+
+          check_flag avx
+          check_flag avx2
+          check_flag avx512f
+          check_flag avx512bw
+          check_flag avx512cd
+          check_flag avx512dq
+          check_flag avx512vl
+
+      - name: List all CPU flags for reference
+        run: grep -m1 'flags' /proc/cpuinfo
+
+      - name: Verify AVX2 works at runtime
+        run: |
+          cat <<'EOF' > avx_check.c
+          #include <stdio.h>
+          #include <immintrin.h>
+
+          int main() {
+              // AVX2: 256-bit integer add
+              __m256i a = _mm256_set1_epi32(1);
+              __m256i b = _mm256_set1_epi32(2);
+              __m256i c = _mm256_add_epi32(a, b);
+
+              int result[8];
+              _mm256_storeu_si256((__m256i*)result, c);
+              printf("AVX2  - 1 + 2 = %d ✅\n", result[0]);
+
+              return 0;
+          }
+          EOF
+          gcc -mavx2 -o avx_check avx_check.c && ./avx_check
+
+      - name: Verify AVX512 works at runtime
+        run: |
+          cat <<'EOF' > avx512_check.c
+          #include <stdio.h>
+          #include <immintrin.h>
+
+          int main() {
+              // AVX-512F: 512-bit integer add
+              __m512i a = _mm512_set1_epi32(10);
+              __m512i b = _mm512_set1_epi32(20);
+              __m512i c = _mm512_add_epi32(a, b);
+
+              int result[16];
+              _mm512_storeu_si512(result, c);
+              printf("AVX512 - 10 + 20 = %d ✅\n", result[0]);
+
+              return 0;
+          }
+          EOF
+          if gcc -mavx512f -o avx512_check avx512_check.c 2>/dev/null; then
+            ./avx512_check || echo "❌ AVX512: compiled but failed at runtime (CPU does not support it)"
+          else
+            echo "❌ AVX512: compilation failed (compiler or CPU does not support it)"
+          fi
