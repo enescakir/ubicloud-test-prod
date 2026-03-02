@@ -29,6 +29,21 @@ jobs:
           - ubicloud-premium-2-ubuntu-2404
           - ubicloud-premium-2-ubuntu-2204
           - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+
 
 
     runs-on: ${{ matrix.runs-on }}
@@ -39,10 +54,6 @@ jobs:
 
       - name: download doppler cli
         run: |
-          set +e
-          headers=$(curl --tlsv1.2 --proto "=https" -w "%{http_code}" --retry 5 -o "doppler-download.tar" -LN -D - "https://cli.doppler.com/download?os=linux&arch=amd64&format=tar" 2>&1)
-          exit_code=$?
-          set -e
-          status_code="$(echo "$headers" | tail -1)"
-          echo "Exit code: $exit_code" >> $GITHUB_STEP_SUMMARY
-          echo "Status code: $status_code" >> $GITHUB_STEP_SUMMARY
+          wget -q https://cli.doppler.com/install.sh
+          chmod +x install.sh
+          ./install.sh --debug --no-package-manager --install-path "./"
