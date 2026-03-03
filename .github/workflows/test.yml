@@ -17,32 +17,32 @@ jobs:
         runs-on:
           - ubicloud-premium-2-ubuntu-2204
           - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
+          # - ubicloud-premium-2-ubuntu-2204
+          # - ubicloud-premium-2-ubuntu-2404
 
 
 
@@ -52,8 +52,12 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: download doppler cli
+      - name: install doppler cli
         run: |
-          wget -q https://cli.doppler.com/install.sh
-          chmod +x install.sh
-          ./install.sh --debug --no-package-manager --install-path "./"
+          binDir="${{ github.workspace }}/bin"
+          mkdir -p "$binDir"
+          (curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh) | sudo sh -s -- --debug --no-package-manager --install-path "$binDir"
+          echo "$binDir" >> $GITHUB_PATH
+
+      - name: check doppler cli version
+        run: doppler --version
