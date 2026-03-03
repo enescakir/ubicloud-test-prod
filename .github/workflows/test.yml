@@ -15,34 +15,34 @@ jobs:
       fail-fast: false
       matrix:
         runs-on:
-          - ubicloud-premium-2-ubuntu-2204
-          - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
-          # - ubicloud-premium-2-ubuntu-2204
-          # - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
 
 
 
@@ -52,6 +52,13 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
+      # - name: install dopler 2
+      #   run: |
+      #     curl -sLf --retry 3 --tlsv1.2 --proto "=https" 'https://packages.doppler.com/public/cli/gpg.DE2A7741A397C129.key' | sudo gpg --dearmor -o /usr/share/keyrings/doppler-archive-keyring.gpg
+      #     echo "deb [signed-by=/usr/share/keyrings/doppler-archive-keyring.gpg] https://packages.doppler.com/public/cli/deb/debian any-version main" | sudo tee /etc/apt/sources.list.d/doppler-cli.list
+      #     sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/doppler-cli.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
+      #     sudo apt-get install -y doppler
+
       - name: install doppler cli
         run: |
           binDir="${{ github.workspace }}/bin"
@@ -59,5 +66,5 @@ jobs:
           (curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh) | sudo sh -s -- --debug --no-package-manager --install-path "$binDir"
           echo "$binDir" >> $GITHUB_PATH
 
-      - name: check doppler cli version
-        run: doppler --version
+      # - name: check doppler cli version
+      #   run: doppler --version
