@@ -5,7 +5,7 @@ on:
     branches: [main]
   # schedule:
   #   - cron: '0 * * * *'
-  
+
 jobs:
   test:
     # container:
@@ -15,34 +15,82 @@ jobs:
       fail-fast: false
       matrix:
         runs-on:
-          - ubicloud-standard-2-ubuntu-2204
           - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-4-ubuntu-2204
-          - ubicloud-standard-4-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubuntu-latest
+          - ubuntu-latest
+          - ubuntu-latest
+          - ubuntu-latest
+          - ubuntu-latest
+          - ubuntu-latest
+          - ubuntu-latest
 
-          
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
 
-      - run: ps aux
-      - run: ps -ef --forest
+      - name: Check systemd-resolved status
+        run: resolvectl status
 
-      - name: ip a
-        run: ip a
-      
-      - name: printenv
-        run: printenv
-      
-      - run: nproc
-  
-      - run: lscpu
+      - name: Check upstream DNS servers
+        run: resolvectl dns
 
-      - run: cat /proc/cpuinfo
+      - name: Test DNS resolution - local resolver
+        run: |
+          dig +short +timeout=2 @127.0.0.53 dynamodb.eu-central-1.amazonaws.com
+          dig +short +timeout=2 @127.0.0.53 airup-terraform-state-erp-autotest.s3.eu-central-1.amazonaws.com
 
-      - run: df -h
+      # - name: Test DNS resolution - external resolver (Cloudflare)
+      #   run: |
+      #     dig +short +timeout=2 @2606:4700:4700::1111 dynamodb.eu-central-1.amazonaws.com
+      #     dig +short +timeout=2 @2606:4700:4700::1111 airup-terraform-state-erp-autotest.s3.eu-central-1.amazonaws.com
+
+      - name: DNS load test - local resolver (2000 lookups)
+        run: |
+          failures=0
+          for i in $(seq 1 2000); do
+            result=$(dig +short +timeout=2 +tries=1 @127.0.0.53 dynamodb.eu-central-1.amazonaws.com 2>&1)
+            if [ -z "$result" ] || echo "$result" | grep -qiE "error|SERVFAIL|NXDOMAIN|timed out"; then
+              echo "$(date -u +%Y-%m-%dT%H:%M:%S) FAIL [$i]: $result"
+              failures=$((failures + 1))
+            fi
+          done
+          echo "Total failures: $failures / 2000"
+          if [ "$failures" -gt 0 ]; then
+            echo "::error::DNS load test failed with $failures failures out of 2000 lookups"
+            exit 1
+          fi
+
+      # - run: ps aux
+      # - run: ps -ef --forest
+
+      # - name: ip a
+      #   run: ip a
+
+      # - name: printenv
+      #   run: printenv
+
+      # - run: nproc
+
+      # - run: lscpu
+
+      # - run: cat /proc/cpuinfo
+
+      # - run: df -h
 
       # - run: |
       #     docker pull ghcr.io/super-linter/super-linter:latest
@@ -50,7 +98,7 @@ jobs:
       #   run: chromedriver --version
 
       # - run: ls -lah /usr/local/share/chromedriver-linux64
-    
+
       # - name: install chrome drive 132.0.6834.159
       #   run: |
       #     curl -O https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chromedriver-linux64.zip
@@ -59,16 +107,16 @@ jobs:
       #     sudo unzip chromedriver-linux64.zip -d /usr/local/share
       #     sudo chmod +x /usr/local/share/chromedriver-linux64/chromedriver
       #     sudo ln -s /usr/local/share/chromedriver-linux64/chromedriver /usr/bin/
-          
+
       # - name: check chrome drive version
       #   run: chromedriver --version
 
       # - run: ls -lah /usr/local/share/chromedriver-linux64
 
-      - run: df -Th
+      # - run: df -Th
 
-      - name: Find big files
-        run: sudo du -ah / | sort -rh | head -n 50
+      # - name: Find big files
+      #   run: sudo du -ah / | sort -rh | head -n 50
 
         # - name: Set up QEMU
       #   uses: docker/setup-qemu-action@v3
@@ -78,7 +126,7 @@ jobs:
       #     #  * https://github.com/tonistiigi/binfmt/issues/215
       #     #  * https://github.com/docker/setup-qemu-action/issues/188
       #     #  * https://github.com/actions/runner-images/issues/11471
-      #     image: tonistiigi/binfmt:latest  
+      #     image: tonistiigi/binfmt:latest
 
       # - name: Set up Docker Buildx
       #   uses: docker/setup-buildx-action@v3
