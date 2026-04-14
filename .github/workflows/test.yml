@@ -16,25 +16,32 @@ jobs:
       matrix:
         runs-on:
           - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubuntu-latest
-          - ubuntu-latest
-          - ubuntu-latest
-          - ubuntu-latest
-          - ubuntu-latest
-          - ubuntu-latest
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubuntu-latest
+          # - ubuntu-latest
+          # - ubuntu-latest
+          # - ubuntu-latest
+          # - ubuntu-latest
+          # - ubuntu-latest
           - ubuntu-latest
 
     runs-on: ${{ matrix.runs-on }}
@@ -43,6 +50,11 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
+      - name: check kernel
+        run: uname -a
+
+      - name: check public IP
+        run: curl -s https://ipinfo.io
       - name: Check systemd-resolved status
         run: resolvectl status
 
@@ -52,28 +64,53 @@ jobs:
       - name: Test DNS resolution - local resolver
         run: |
           dig +short +timeout=2 @127.0.0.53 dynamodb.eu-central-1.amazonaws.com
-          dig +short +timeout=2 @127.0.0.53 airup-terraform-state-erp-autotest.s3.eu-central-1.amazonaws.com
+
+      - name: Check xtables legacy support
+        run: |
+          echo "=== CONFIG_NETFILTER_XTABLES_LEGACY ==="
+          cat /boot/config-$(uname -r) | grep CONFIG_NETFILTER_XTABLES_LEGACY || echo "NOT FOUND"
+          echo ""
+          echo "=== CONFIG_IP_NF ==="
+          cat /boot/config-$(uname -r) | grep CONFIG_IP_NF
+
+      - name: Check iptables NAT
+        run: |
+          sudo iptables -t nat -L
+          sudo modprobe ip_tables && echo "ip_tables: OK" || echo "ip_tables: FAILED"
+
+      - name: Check for route anomalies
+        run: sudo ip route show
+
+      - name: Check DockerHub connectivity and limit
+        run: |
+          TOKEN=$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
+          curl --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
+
+      - name: check kernel message
+        if: always()
+        run: |
+          sudo dmesg | grep -iE "net|eth|hv_netvsc|tcp|drop"
 
       # - name: Test DNS resolution - external resolver (Cloudflare)
       #   run: |
       #     dig +short +timeout=2 @2606:4700:4700::1111 dynamodb.eu-central-1.amazonaws.com
       #     dig +short +timeout=2 @2606:4700:4700::1111 airup-terraform-state-erp-autotest.s3.eu-central-1.amazonaws.com
 
-      - name: DNS load test - local resolver (2000 lookups)
-        run: |
-          failures=0
-          for i in $(seq 1 2000); do
-            result=$(dig +short +timeout=2 +tries=1 @127.0.0.53 dynamodb.eu-central-1.amazonaws.com 2>&1)
-            if [ -z "$result" ] || echo "$result" | grep -qiE "error|SERVFAIL|NXDOMAIN|timed out"; then
-              echo "$(date -u +%Y-%m-%dT%H:%M:%S) FAIL [$i]: $result"
-              failures=$((failures + 1))
-            fi
-          done
-          echo "Total failures: $failures / 2000"
-          if [ "$failures" -gt 0 ]; then
-            echo "::error::DNS load test failed with $failures failures out of 2000 lookups"
-            exit 1
-          fi
+      # - name: DNS load test - local resolver (2000 lookups)
+      #   run: |
+      #     failures=0
+      #     for i in $(seq 1 2000); do
+      #       result=$(dig +short +timeout=2 +tries=1 @127.0.0.53 dynamodb.eu-central-1.amazonaws.com 2>&1)
+      #       if [ -z "$result" ] || echo "$result" | grep -qiE "error|SERVFAIL|NXDOMAIN|timed out"; then
+      #         echo "$(date -u +%Y-%m-%dT%H:%M:%S) FAIL [$i]: $result"
+      #         failures=$((failures + 1))
+      #       fi
+      #     done
+      #     echo "Total failures: $failures / 2000"
+      #     if [ "$failures" -gt 0 ]; then
+      #       echo "::error::DNS load test failed with $failures failures out of 2000 lookups"
+      #       exit 1
+          # fi
 
       # - run: ps aux
       # - run: ps -ef --forest
