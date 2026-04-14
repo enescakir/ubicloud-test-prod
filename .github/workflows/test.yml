@@ -16,26 +16,26 @@ jobs:
       matrix:
         runs-on:
           - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2404
-          # - ubicloud-standard-2-ubuntu-2204
-          # - ubicloud-standard-2-ubuntu-2204
-          # - ubicloud-standard-2-ubuntu-2204
-          # - ubicloud-standard-2-ubuntu-2204
-          # - ubicloud-standard-2-ubuntu-2204
-          # - ubicloud-standard-2-ubuntu-2204
-          # - ubicloud-standard-2-ubuntu-2204
-          # - ubicloud-standard-2-ubuntu-2204
-          # - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
           # - ubuntu-latest
           # - ubuntu-latest
           # - ubuntu-latest
@@ -53,43 +53,58 @@ jobs:
       - name: check kernel
         run: uname -a
 
-      - name: check public IP
-        run: curl -s https://ipinfo.io
-      - name: Check systemd-resolved status
-        run: resolvectl status
+      - name: Check runner public IP
+        run: curl -s ifconfig.me || true
 
-      - name: Check upstream DNS servers
-        run: resolvectl dns
+      - name: Check DNS configuration
+        run: cat /etc/resolv.conf
 
-      - name: Test DNS resolution - local resolver
-        run: |
-          dig +short +timeout=2 @127.0.0.53 dynamodb.eu-central-1.amazonaws.com
+      - name: Check Docker daemon configuration
+        run: cat /etc/docker/daemon.json 2>/dev/null || echo "No daemon.json found"
 
-      - name: Check xtables legacy support
-        run: |
-          echo "=== CONFIG_NETFILTER_XTABLES_LEGACY ==="
-          cat /boot/config-$(uname -r) | grep CONFIG_NETFILTER_XTABLES_LEGACY || echo "NOT FOUND"
-          echo ""
-          echo "=== CONFIG_IP_NF ==="
-          cat /boot/config-$(uname -r) | grep CONFIG_IP_NF
+      - name: Check Docker daemon info
+        run: docker info
 
-      - name: Check iptables NAT
-        run: |
-          sudo iptables -t nat -L
-          sudo modprobe ip_tables && echo "ip_tables: OK" || echo "ip_tables: FAILED"
+      - name: Resolve Docker Hub (A record)
+        run: dig registry-1.docker.io A +short
 
-      - name: Check for route anomalies
-        run: sudo ip route show
+      - name: Resolve Docker Hub (AAAA record)
+        run: dig registry-1.docker.io AAAA +short
+
+      - name: Lookup Docker Hub via nslookup
+        run: nslookup registry-1.docker.io
+
+      - name: Test HTTPS connectivity to Docker Hub
+        run: curl -sI https://registry-1.docker.io/v2/ || true
+
+      - name: Traceroute to Docker Hub
+        run: traceroute -m 10 registry-1.docker.io 2>/dev/null || true
+
+      - name: Test HTTP/2 connectivity to Go proxy
+        run: curl -sI --http2 https://proxy.golang.org || true
+
+      - name: Test HTTP/1.1 fallback to Go proxy
+        run: curl -sI --http1.1 https://proxy.golang.org || true
+
+      - name: Test HTTP/2 connectivity to Google CDN
+        run: curl -sI --http2 https://dl.google.com || true
+
+      - name: Test HTTP/1.1 fallback to Google CDN
+        run: curl -sI --http1.1 https://dl.google.com || true
+
+      - name: Traceroute to Go proxy
+        run: traceroute -m 10 proxy.golang.org 2>/dev/null || true
+
+      - name: Traceroute to Google CDN
+        run: traceroute -m 10 dl.google.com 2>/dev/null || true
+
+      - name: Check curl version and HTTP/2 support
+        run: curl --version
 
       - name: Check DockerHub connectivity and limit
         run: |
           TOKEN=$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
           curl --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
-
-      - name: check kernel message
-        if: always()
-        run: |
-          sudo dmesg | grep -iE "net|eth|hv_netvsc|tcp|drop"
 
       # - name: Test DNS resolution - external resolver (Cloudflare)
       #   run: |
