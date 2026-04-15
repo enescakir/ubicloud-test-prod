@@ -57,13 +57,55 @@ jobs:
           - ubicloud-standard-2-ubuntu-2204
           - ubicloud-standard-2-ubuntu-2204
           - ubicloud-standard-2-ubuntu-2204
-          - ubuntu-latest
-          - ubuntu-latest
-          - ubuntu-latest
-          - ubuntu-latest
-          - ubuntu-latest
-          - ubuntu-latest
-          - ubuntu-latest
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2204
+          # - ubuntu-latest
+          # - ubuntu-latest
+          # - ubuntu-latest
+          # - ubuntu-latest
+          # - ubuntu-latest
+          # - ubuntu-latest
+          # - ubuntu-latest
 
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
@@ -77,8 +119,23 @@ jobs:
       # - name: Check runner public IP
       #   run: curl -s ifconfig.me || true
 
-      # - name: Check DNS configuration
-      #   run: cat /etc/resolv.conf
+      # - run: sudo resolvectl status
+
+      # - run: |
+      #     sudo sed -i 's/nameserver 127.0.0.53/nameserver fd00:0b1c:100d:53::/' /etc/resolv.conf
+      # - run: |
+      #     sudo mkdir -p /etc/systemd/resolved.conf.d
+      #     cat <<EOF | sudo tee /etc/systemd/resolved.conf.d/no-stub.conf
+      #     [Resolve]
+      #     DNSStubListener=no
+      #     EOF
+      #     sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+      #     sudo systemctl restart systemd-resolved
+
+      - run: sudo resolvectl status
+      - run: cat /etc/resolv.conf || true
+      - run: cat /etc/systemd/resolved.conf || true
+      - run: cat /etc/systemd/resolved.conf.d/*.conf 2>/dev/null || true
 
       # - name: Check Docker daemon configuration
       #   run: cat /etc/docker/daemon.json 2>/dev/null || echo "No daemon.json found"
@@ -124,11 +181,37 @@ jobs:
 
       - name: Check DockerHub connectivity and limit IPv4
         run: |
-          TOKEN=$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
-          curl --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
+          TOKEN=$(curl -v "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
+          curl -v --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
 
-      - name: pull alpine
-        run: docker pull alpine:latest
+      - name: Check DockerHub connectivity and limit IPv4
+        if: always()
+        run: |
+          TOKEN=$(curl -v "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
+          curl -v --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
+
+      - name: run hammer script
+        run: |
+          ./hammer.sh 50 10
+
+      - name: Resolve Docker Hub (A record)
+        if: always()
+        run: dig registry-1.docker.io A +short
+
+      - name: Resolve Docker Hub (AAAA record)
+        if: always()
+        run: dig registry-1.docker.io AAAA +short
+
+      # - name: pull alpine
+      #   run: docker pull alpine:latest
+
+      - name: print resolvectl statistics
+        if: always()
+        run: sudo resolvectl statistics 2>/dev/null || echo "(resolvectl not available)"
+
+      # - name: sleep 60 minutes if failed
+      #   if: failure()
+      #   run: sleep 3600
 
       # - name: Check DockerHub connectivity and limit IPv6
       #   run: |
