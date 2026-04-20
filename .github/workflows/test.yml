@@ -2,110 +2,20 @@ name: Test Ubicloud Prod Runners
 
 on:
   push:
-    branches: [main]
+    branches: [enes/test-playwright]
   # schedule:
   #   - cron: '0 * * * *'
 
 jobs:
   test:
-    # container:
-    #   image: ubuntu:latest
-      # options: --init
     strategy:
       fail-fast: false
       matrix:
         runs-on:
           - ubicloud-standard-2-ubuntu-2404
           - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          # - ubuntu-latest
-          # - ubuntu-latest
-          # - ubuntu-latest
-          # - ubuntu-latest
-          # - ubuntu-latest
-          # - ubuntu-latest
-          # - ubuntu-latest
+          - ubuntu-latest
+          - ubuntu-latest
 
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
@@ -113,202 +23,35 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
 
-      - name: check kernel
-        run: uname -a
-
-      # - name: Check runner public IP
-      #   run: curl -s ifconfig.me || true
-
-      # - run: sudo resolvectl status
-
-      # - run: |
-      #     sudo sed -i 's/nameserver 127.0.0.53/nameserver fd00:0b1c:100d:53::/' /etc/resolv.conf
-      # - run: |
-      #     sudo mkdir -p /etc/systemd/resolved.conf.d
-      #     cat <<EOF | sudo tee /etc/systemd/resolved.conf.d/no-stub.conf
-      #     [Resolve]
-      #     DNSStubListener=no
-      #     EOF
-      #     sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
-      #     sudo systemctl restart systemd-resolved
-
-      - run: sudo resolvectl status
-      - run: cat /etc/resolv.conf || true
-      - run: cat /etc/systemd/resolved.conf || true
-      - run: cat /etc/systemd/resolved.conf.d/*.conf 2>/dev/null || true
-
-      # - name: Check Docker daemon configuration
-      #   run: cat /etc/docker/daemon.json 2>/dev/null || echo "No daemon.json found"
-
-      # - name: Check Docker daemon info
-      #   run: docker info
-
-      # - name: Resolve Docker Hub (A record)
-      #   run: dig registry-1.docker.io A +short
-
-      # - name: Resolve Docker Hub (AAAA record)
-      #   run: dig registry-1.docker.io AAAA +short
-
-      # - name: Lookup Docker Hub via nslookup
-      #   run: nslookup registry-1.docker.io
-
-      # - name: Test HTTPS connectivity to Docker Hub
-      #   run: curl -sI https://registry-1.docker.io/v2/ || true
-
-      # - name: Traceroute to Docker Hub
-      #   run: traceroute -m 10 registry-1.docker.io 2>/dev/null || true
-
-      # - name: Test HTTP/2 connectivity to Go proxy
-      #   run: curl -sI --http2 https://proxy.golang.org || true
-
-      # - name: Test HTTP/1.1 fallback to Go proxy
-      #   run: curl -sI --http1.1 https://proxy.golang.org || true
-
-      # - name: Test HTTP/2 connectivity to Google CDN
-      #   run: curl -sI --http2 https://dl.google.com || true
-
-      # - name: Test HTTP/1.1 fallback to Google CDN
-      #   run: curl -sI --http1.1 https://dl.google.com || true
-
-      # - name: Traceroute to Go proxy
-      #   run: traceroute -m 10 proxy.golang.org 2>/dev/null || true
-
-      # - name: Traceroute to Google CDN
-      #   run: traceroute -m 10 dl.google.com 2>/dev/null || true
-
-      # - name: Check curl version and HTTP/2 support
-      #   run: curl --version
-
-      - name: Check DockerHub connectivity and limit IPv4
-        run: |
-          TOKEN=$(curl -v "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
-          curl -v --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
-
-      - name: Check DockerHub connectivity and limit IPv4
-        if: always()
-        run: |
-          TOKEN=$(curl -v "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
-          curl -v --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
-
-      - name: run hammer script
-        run: |
-          ./hammer.sh 50 10
-
-      - name: Resolve Docker Hub (A record)
-        if: always()
-        run: dig registry-1.docker.io A +short
-
-      - name: Resolve Docker Hub (AAAA record)
-        if: always()
-        run: dig registry-1.docker.io AAAA +short
-
-      # - name: pull alpine
-      #   run: docker pull alpine:latest
-
-      - name: print resolvectl statistics
-        if: always()
-        run: sudo resolvectl statistics 2>/dev/null || echo "(resolvectl not available)"
-
-      # - name: sleep 60 minutes if failed
-      #   if: failure()
-      #   run: sleep 3600
-
-      # - name: Check DockerHub connectivity and limit IPv6
-      #   run: |
-      #     TOKEN=$(curl -6 "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
-      #     curl -6 --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
-
-      # - name: Test DNS resolution - external resolver (Cloudflare)
-      #   run: |
-      #     dig +short +timeout=2 @2606:4700:4700::1111 dynamodb.eu-central-1.amazonaws.com
-      #     dig +short +timeout=2 @2606:4700:4700::1111 airup-terraform-state-erp-autotest.s3.eu-central-1.amazonaws.com
-
-      # - name: DNS load test - local resolver (2000 lookups)
-      #   run: |
-      #     failures=0
-      #     for i in $(seq 1 2000); do
-      #       result=$(dig +short +timeout=2 +tries=1 @127.0.0.53 dynamodb.eu-central-1.amazonaws.com 2>&1)
-      #       if [ -z "$result" ] || echo "$result" | grep -qiE "error|SERVFAIL|NXDOMAIN|timed out"; then
-      #         echo "$(date -u +%Y-%m-%dT%H:%M:%S) FAIL [$i]: $result"
-      #         failures=$((failures + 1))
-      #       fi
-      #     done
-      #     echo "Total failures: $failures / 2000"
-      #     if [ "$failures" -gt 0 ]; then
-      #       echo "::error::DNS load test failed with $failures failures out of 2000 lookups"
-      #       exit 1
-          # fi
-
-      # - run: ps aux
-      # - run: ps -ef --forest
-
-      # - name: ip a
-      #   run: ip a
-
-      # - name: printenv
-      #   run: printenv
-
-      # - run: nproc
-
-      # - run: lscpu
-
-      # - run: cat /proc/cpuinfo
-
-      # - run: df -h
-
-      # - run: |
-      #     docker pull ghcr.io/super-linter/super-linter:latest
-      # - name: check chrome drive version
-      #   run: chromedriver --version
-
-      # - run: ls -lah /usr/local/share/chromedriver-linux64
-
-      # - name: install chrome drive 132.0.6834.159
-      #   run: |
-      #     curl -O https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chromedriver-linux64.zip
-      #     sudo rm -rf /usr/local/share/chromedriver-linux64
-      #     sudo rm -rf /usr/bin/chromedriver
-      #     sudo unzip chromedriver-linux64.zip -d /usr/local/share
-      #     sudo chmod +x /usr/local/share/chromedriver-linux64/chromedriver
-      #     sudo ln -s /usr/local/share/chromedriver-linux64/chromedriver /usr/bin/
-
-      # - name: check chrome drive version
-      #   run: chromedriver --version
-
-      # - run: ls -lah /usr/local/share/chromedriver-linux64
-
-      # - run: df -Th
-
-      # - name: Find big files
-      #   run: sudo du -ah / | sort -rh | head -n 50
-
-        # - name: Set up QEMU
-      #   uses: docker/setup-qemu-action@v3
-      #   with:
-      #     # Using binfmt with updated QEMU image due to random compiler segfaults.
-      #     # Discussions about the issue:
-      #     #  * https://github.com/tonistiigi/binfmt/issues/215
-      #     #  * https://github.com/docker/setup-qemu-action/issues/188
-      #     #  * https://github.com/actions/runner-images/issues/11471
-      #     image: tonistiigi/binfmt:latest
-
-      # - name: Set up Docker Buildx
-      #   uses: docker/setup-buildx-action@v3
-
-      # - name: Build and push
-      #   uses: docker/build-push-action@v6
-      #   with:
-      #     platforms: linux/amd64,linux/arm64
-      #     push: false
-      #     tags: test/app:latest
-
-      # - name: nslookup builds.hex.pm
-      #   continue-on-error: true
-      #   run: nslookup builds.hex.pm
-
-      # - uses: erlef/setup-beam@v1.18.1
-      #   with:
-      #     version-file: .tool-versions
-      #     version-type: strict
-      #     hexpm-mirrors: |
-      #       https://builds.hex.pm
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'npm'
+ 
+      - name: Install npm dependencies
+        run: npm ci
+ 
+      # Pin cache key to the Playwright version so browsers are redownloaded
+      # only when Playwright itself bumps — not on unrelated dependency changes.
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+ 
+      # - run: npx playwright install --with-deps chromium chrome
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+ 
+      # Chromium lives in ~/.cache/ms-playwright and is cached above.
+      - name: Install Chromium (only on cache miss)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium chrome
+ 
+      # System libraries (shared objects under /usr/lib etc.) — fast to (re)install,
+      # not worth caching. Always run so the browsers can actually launch.
+      - name: Install Playwright system dependencies
+        run: npx playwright install-deps chromium chrome
