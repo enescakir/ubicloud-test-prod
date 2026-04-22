@@ -2,7 +2,7 @@ name: Test Ubicloud Prod Runners
 
 on:
   push:
-    branches: [main]
+    branches: [enes/test-proxy-dns]
   # schedule:
   #   - cron: '0 * * * *'
 
@@ -16,10 +16,38 @@ jobs:
       matrix:
         runs-on:
           - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-arm-ubuntu-2404
           - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubuntu-latest
+          - ubicloud-standard-2-arm-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-arm-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-arm-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-arm-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-arm-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-arm-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-arm-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-arm-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-arm-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-arm-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-arm-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-arm-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-arm-ubuntu-2204
+          # - ubicloud-standard-2-ubuntu-2404
+          # - ubicloud-standard-2-arm-ubuntu-2404
+          # - ubicloud-standard-2-ubuntu-2204
+          # - ubicloud-standard-2-arm-ubuntu-2204
+          # - ubuntu-latest
           - ubuntu-latest
 
     runs-on: ${{ matrix.runs-on }}
@@ -28,14 +56,34 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
 
-      - name: check kernel
-        run: uname -a
-
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v3'
+      - name: Tailscale
+        uses: tailscale/github-action@v4
         with:
-          version: '>= 363.0.0'
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          args: --accept-dns=true
 
-      - name: 'Use gcloud CLI'
-        run: 'gcloud info'
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
 
+      - uses: astral-sh/setup-uv@v7
+        id: setup-uv
+        with:
+          version: "latest"
+          enable-cache: "true"
+
+      - name: Error if cache doesn't hit for setup-uv
+        if: steps.setup-uv.outputs.cache-hit == 'false'
+        run: |
+          echo "Cache didn't hit for setup-uv"
+          exit 1
+
+      - name: Install dependencies
+        run: uv sync -p 3.12
+
+      - name: Print cache proxy log
+        run: sudo cat /var/log/cacheproxy.log || true
+        if: always()
