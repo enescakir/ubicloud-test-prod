@@ -1,41 +1,250 @@
-name: Test Ubicloud Prod Runners
+name: Benchmark APT Mirrors
 
 on:
   push:
-    branches: [main]
-  # schedule:
-  #   - cron: '0 * * * *'
+    branches: [enes/test-apt-get]
 
 jobs:
-  test:
-    # container:
-    #   image: ubuntu:latest
-      # options: --init
-    strategy:
-      fail-fast: false
-      matrix:
-        runs-on:
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubuntu-latest
-          - ubuntu-latest
-
-    runs-on: ${{ matrix.runs-on }}
-    name: ${{ matrix.runs-on }}
+  benchmark:
+    runs-on: ubicloud-standard-4
     steps:
-      - name: checkout
-        uses: actions/checkout@v6
+      - name: Run benchmarks
+        env:
+          RELEASE: "noble"
+          RUNS: "3"
+        run: |
+          set -uo pipefail
 
-      - name: check kernel
-        run: uname -a
+          # name|url — edit to add/remove mirrors
+          mirrors=(
+            "archive.ubuntu.com|http://archive.ubuntu.com/ubuntu"
+            "de.archive.ubuntu.com|http://de.archive.ubuntu.com/ubuntu"
+            "security.ubuntu.com|http://security.ubuntu.com/ubuntu"
+            "mirror.hetzner.com|http://mirror.hetzner.com/ubuntu/packages"
+            "azure.archive.ubuntu.com|http://azure.archive.ubuntu.com/ubuntu"
+            "eu-central-1.ec2.archive.ubuntu.com|http://eu-central-1.ec2.archive.ubuntu.com/ubuntu"
+          )
 
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v3'
-        with:
-          version: '>= 363.0.0'
+          arch=$(dpkg --print-architecture)
+          ports_arch=0
+          if [[ "$arch" != "amd64" && "$arch" != "i386" ]]; then
+            ports_arch=1
+          fi
 
-      - name: 'Use gcloud CLI'
-        run: 'gcloud info'
+          summary="$GITHUB_STEP_SUMMARY"
 
+          {
+            echo "# APT mirror benchmark"
+            echo ""
+            echo "- Release: \`$RELEASE\`"
+            echo "- Architecture: \`$arch\`"
+            echo "- Runs per mirror: \`$RUNS\` (best result wins)"
+            echo ""
+          } >> "$summary"
+
+          # ------------------------------------------------------------------
+          # Phase 1: curl latency / throughput on Packages.gz
+          # ------------------------------------------------------------------
+          echo "::group::Phase 1: curl Packages.gz"
+          {
+            echo "## Phase 1 — curl Packages.gz"
+            echo ""
+            echo "| Mirror | Connect (s) | TTFB (s) | Total (s) | Speed (KB/s) |"
+            echo "|---|--:|--:|--:|--:|"
+          } >> "$summary"
+
+          for entry in "${mirrors[@]}"; do
+            name="${entry%%|*}"
+            url="${entry##*|}"
+            target="$url/dists/$RELEASE/main/binary-$arch/Packages.gz"
+
+            best_total=""
+            best_line=""
+            for i in $(seq 1 "$RUNS"); do
+              line=$(curl -o /dev/null -sS --max-time 30 \
+                -w "%{time_connect} %{time_starttransfer} %{time_total} %{speed_download}" \
+                "$target" 2>/dev/null) || continue
+              total=$(echo "$line" | awk '{print $3}')
+              if [[ -z "$best_total" ]] || awk -v a="$total" -v b="$best_total" 'BEGIN{exit !(a<b)}'; then
+                best_total=$total
+                best_line=$line
+              fi
+            done
+
+            if [[ -z "$best_line" ]]; then
+              echo "| $name | — | — | — | FAIL |" >> "$summary"
+              echo "  $name: FAIL"
+            else
+              read -r connect ttfb total speed <<<"$best_line"
+              speed_kb=$(awk -v s="$speed" 'BEGIN{printf "%.0f", s/1024}')
+              printf "| %s | %.3f | %.3f | %.3f | %s |\n" \
+                "$name" "$connect" "$ttfb" "$total" "$speed_kb" >> "$summary"
+              printf "  %-50s connect=%.3fs ttfb=%.3fs total=%.3fs speed=%sKB/s\n" \
+                "$name" "$connect" "$ttfb" "$total" "$speed_kb"
+            fi
+          done
+          echo "" >> "$summary"
+          echo "::endgroup::"
+
+          # ------------------------------------------------------------------
+          # Phase 2: large-file throughput
+          # ------------------------------------------------------------------
+          echo "::group::Phase 2: large file throughput"
+
+          # Discover one large package path from the first mirror that responds.
+          # All Ubuntu mirrors share the same pool/ layout, so the same Filename
+          # works across every mirror.
+          tmp_pkgs=$(mktemp)
+          discovery_ok=0
+          for entry in "${mirrors[@]}"; do
+            url="${entry##*|}"
+            if curl -sfL --max-time 15 -o "$tmp_pkgs" \
+                 "$url/dists/$RELEASE/main/binary-$arch/Packages.gz"; then
+              discovery_ok=1
+              break
+            fi
+          done
+
+          large_file=""
+          if [[ "$discovery_ok" == "1" ]]; then
+            # Decompress fully first — awk's `exit` closes the pipe early,
+            # which would SIGPIPE zcat and fail the script under pipefail.
+            zcat "$tmp_pkgs" > "$tmp_pkgs.txt"
+            # First package whose Size > 50 MB.
+            large_file=$(awk '
+              /^Filename: / { fn=$2 }
+              /^Size: /     { sz=$2+0 }
+              /^$/          { if (sz > 50000000 && fn != "") { print fn; exit }
+                              fn=""; sz=0 }
+            ' "$tmp_pkgs.txt")
+            rm -f "$tmp_pkgs.txt"
+          fi
+          rm -f "$tmp_pkgs"
+
+          if [[ -z "$large_file" ]]; then
+            echo "  could not discover a large package; skipping phase 2"
+            {
+              echo "## Phase 2 — large file throughput"
+              echo ""
+              echo "_skipped: could not fetch Packages.gz or no package > 50 MB found_"
+              echo ""
+            } >> "$summary"
+          else
+            echo "  test file: $large_file"
+            {
+              echo "## Phase 2 — large file throughput"
+              echo ""
+              echo "Test file: \`$large_file\` (download capped at 60s per run, best of 2)"
+              echo ""
+              echo "| Mirror | Speed (MB/s) | Downloaded (MB) | Time (s) |"
+              echo "|---|--:|--:|--:|"
+            } >> "$summary"
+
+            for entry in "${mirrors[@]}"; do
+              name="${entry%%|*}"
+              url="${entry##*|}"
+              target="$url/$large_file"
+
+              best_speed=""
+              best_size=""
+              best_time=""
+              for i in 1 2; do
+                line=$(curl -o /dev/null -sS --max-time 60 \
+                  -w "%{speed_download} %{size_download} %{time_total}" \
+                  "$target" 2>/dev/null) || continue
+                read -r speed size t <<<"$line"
+                # Treat zero-byte responses as failure.
+                [[ "$size" == "0" ]] && continue
+                if [[ -z "$best_speed" ]] || awk -v a="$speed" -v b="$best_speed" 'BEGIN{exit !(a>b)}'; then
+                  best_speed=$speed
+                  best_size=$size
+                  best_time=$t
+                fi
+              done
+
+              if [[ -z "$best_speed" ]]; then
+                echo "| $name | — | — | FAIL |" >> "$summary"
+                echo "  $name: FAIL"
+              else
+                speed_mb=$(awk -v s="$best_speed" 'BEGIN{printf "%.1f", s/1048576}')
+                size_mb=$(awk -v s="$best_size"  'BEGIN{printf "%.1f", s/1048576}')
+                time_s=$(awk  -v t="$best_time"  'BEGIN{printf "%.2f", t}')
+                printf "| %s | %s | %s | %s |\n" \
+                  "$name" "$speed_mb" "$size_mb" "$time_s" >> "$summary"
+                printf "  %-50s %sMB/s (%sMB in %ss)\n" \
+                  "$name" "$speed_mb" "$size_mb" "$time_s"
+              fi
+            done
+            echo "" >> "$summary"
+          fi
+          echo "::endgroup::"
+
+          # ------------------------------------------------------------------
+          # Phase 3: apt-get update (isolated, no system-state changes)
+          # ------------------------------------------------------------------
+          echo "::group::Phase 3: apt-get update"
+          {
+            echo "## Phase 3 — apt-get update (single mirror, cold cache)"
+            echo ""
+            echo "| Mirror | Best (s) |"
+            echo "|---|--:|"
+          } >> "$summary"
+
+          APT_DIR=/tmp/apt-bench
+          sudo rm -rf "$APT_DIR"
+          sudo mkdir -p "$APT_DIR/lists/partial" "$APT_DIR/cache/archives/partial"
+          sudo chown -R "$(id -u):$(id -g)" "$APT_DIR"
+
+          for entry in "${mirrors[@]}"; do
+            name="${entry%%|*}"
+            url="${entry##*|}"
+
+            best=""
+            for i in $(seq 1 "$RUNS"); do
+              echo "deb [trusted=yes] $url $RELEASE main restricted universe multiverse" \
+                > "$APT_DIR/sources.list"
+              rm -rf "$APT_DIR/lists"/*
+
+              start=$(date +%s.%N)
+              if sudo apt-get \
+                  -o Dir::Etc::sourcelist="$APT_DIR/sources.list" \
+                  -o Dir::Etc::sourceparts=- \
+                  -o Dir::State::lists="$APT_DIR/lists" \
+                  -o Dir::Cache="$APT_DIR/cache" \
+                  -o Acquire::Retries=0 \
+                  -o Acquire::http::Timeout=15 \
+                  -o Acquire::https::Timeout=15 \
+                  update -qq >/dev/null 2>&1; then
+                end=$(date +%s.%N)
+                elapsed=$(awk -v s="$start" -v e="$end" 'BEGIN{printf "%.3f", e-s}')
+                if [[ -z "$best" ]] || awk -v a="$elapsed" -v b="$best" 'BEGIN{exit !(a<b)}'; then
+                  best=$elapsed
+                fi
+              fi
+            done
+
+            if [[ -z "$best" ]]; then
+              echo "| $name | FAIL |" >> "$summary"
+              echo "  $name: FAIL"
+            else
+              echo "| $name | $best |" >> "$summary"
+              echo "  $name: ${best}s"
+            fi
+          done
+          echo "" >> "$summary"
+          echo "::endgroup::"
+
+          # ------------------------------------------------------------------
+          # Notes
+          # ------------------------------------------------------------------
+          {
+            echo "## Notes"
+            echo ""
+            if [[ "$ports_arch" == "1" ]]; then
+              echo "- This runner is \`$arch\`. Mirrors that only carry \`archive.ubuntu.com\` content (amd64/i386) will fail. Use \`ports.ubuntu.com\` or a mirror that syncs \`ubuntu-ports\`."
+            fi
+            echo "- Phase 1 is latency-bound (small \`Packages.gz\`)."
+            echo "- Phase 2 measures steady-state throughput on a large \`.deb\` (best speed wins; download is capped at 60s)."
+            echo "- Phase 3 reflects real \`apt-get update\` cost including index parsing and signature verification."
+            echo "- For Phases 1 & 3 lower is better; for Phase 2 higher is better."
+          } >> "$summary"
