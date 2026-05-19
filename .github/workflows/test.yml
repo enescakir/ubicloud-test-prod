@@ -32,8 +32,8 @@ jobs:
       - name: check kernel
         run: uname -a
 
-      - run: docker run --rm public.ecr.aws/h4m7v9o4/node:24-alpine which yarn
-      - run: docker run --rm public.ecr.aws/h4m7v9o4/node:24-alpine yarn --version
+      - run: |
+          sudo docker run --rm public.ecr.aws/h4m7v9o4/node:24-alpine sh -c 'wget -S -O /dev/null https://repo.yarnpkg.com/4.7.0/packages/yarnpkg-cli/bin/yarn.js 2>&1 | head -30'
       - run: sudo apt-get update
       - run: sudo rm -rf /var/lib/apt/lists/*
       - run: sudo apt-get update
