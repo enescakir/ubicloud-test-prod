@@ -2,7 +2,7 @@ name: Test Ubicloud Prod Runners
 
 on:
   push:
-    branches: [main]
+    branches: [checkout-benchmark]
   # schedule:
   #   - cron: '0 * * * *'
 
@@ -16,10 +16,7 @@ jobs:
       matrix:
         runs-on:
           - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404
           - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubuntu-latest
           - ubuntu-latest
 
     runs-on: ${{ matrix.runs-on }}
@@ -27,16 +24,7 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-
-      - run: uptime -s
       - name: check kernel
         run: uname -a
-
-      - run: docker run --rm public.ecr.aws/h4m7v9o4/node:24-alpine which yarn
-      - run: docker run --rm public.ecr.aws/h4m7v9o4/node:24-alpine yarn --version
-      - run: sudo apt-get update
-      - run: sudo rm -rf /var/lib/apt/lists/*
-      - run: sudo apt-get update
-      - run: sudo apt-get install -y build-essential
-      - run: sudo apt-get install -y vim
+      - run: ./net-debug.sh
 
