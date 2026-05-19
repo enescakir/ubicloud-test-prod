@@ -32,6 +32,8 @@ jobs:
       - name: check kernel
         run: uname -a
 
+      - run: docker run --rm public.ecr.aws/h4m7v9o4/node:24-alpine which yarn
+      - run: docker run --rm public.ecr.aws/h4m7v9o4/node:24-alpine yarn --version
       - run: sudo apt-get update
       - run: sudo rm -rf /var/lib/apt/lists/*
       - run: sudo apt-get update
