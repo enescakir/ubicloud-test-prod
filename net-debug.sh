@@ -54,14 +54,25 @@ tsv_to_md() {
   ' "$1"
 }
 
-# Bandwidth endpoints to probe. Picked so the throughput numbers are comparable.
-# label|url
-BW_TARGETS=(
+# Bandwidth endpoints to probe.
+# - github_*: the actual paths git fetch uses
+# - hetzner_fsn: intra-Hetzner Falkenstein — your local-network ceiling
+# - hetzner_hel: intra-Hetzner Helsinki    — EU-wide control (still on Hetzner backbone)
+# - us_transatlantic: US-hosted file       — geographic control vs the GitHub path
+# Override with BW_TARGETS env var: "label1|url1 label2|url2 ..."
+DEFAULT_BW_TARGETS=(
   "github_codeload|https://codeload.github.com/git/git/tar.gz/refs/tags/v2.45.0"
   "github_release|https://github.com/cli/cli/releases/download/v2.40.0/gh_2.40.0_linux_amd64.tar.gz"
-  "cloudflare_10MB|https://speed.cloudflare.com/__down?bytes=10485760"
-  "hetzner_100MB|https://speed.hetzner.de/100MB.bin"
+  "hetzner_fsn|https://fsn1-speed.hetzner.com/100MB.bin"
+  "hetzner_hel|https://hel1-speed.hetzner.com/100MB.bin"
+  "us_transatlantic|https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.tar.xz"
 )
+if [ -n "${BW_TARGETS_OVERRIDE:-}" ]; then
+  # shellcheck disable=SC2206
+  BW_TARGETS=($BW_TARGETS_OVERRIDE)
+else
+  BW_TARGETS=("${DEFAULT_BW_TARGETS[@]}")
+fi
 
 echo "Output dir: $OUT"
 echo "Live view:  tail -F $OUT/run-NN.log    (in another terminal)"
@@ -119,20 +130,28 @@ for i in $(seq 1 "$ITER"); do
 
   # ---- 1. latency probe to github.com (kept for the fetch row) ----
   echo "--- latency: https://github.com/" >>"$LOG"
-  GH_TIMINGS=$(curl -sS -o /dev/null -w "$CURL_TIMING" --max-time 30 "https://github.com/" 2>>"$LOG" \
-               || echo "ERR ERR ERR ERR ERR 000 0 0")
+  GH_TIMINGS=$(curl -sS -o /dev/null -L -A 'net-debug/1.0' -w "$CURL_TIMING" \
+               --max-time 30 "https://github.com/" 2>>"$LOG")
+  [ -z "$GH_TIMINGS" ] && GH_TIMINGS="ERR ERR ERR ERR ERR 000 0 0"
   read -r T_DNS T_CONN T_TLS T_TTFB T_TOTAL _CODE _BYTES _SPEED <<<"$GH_TIMINGS"
   echo "  dns connect appconnect ttfb total code bytes speed: $GH_TIMINGS" >>"$LOG"
 
   # ---- 2. bandwidth probes ----
+  # Note: curl -w prints stats even on timeout (exit 28), so we keep its output
+  # regardless of exit code — a slow/partial transfer is the signal we want.
   for entry in "${BW_TARGETS[@]}"; do
     LABEL="${entry%%|*}"
     URL="${entry#*|}"
     echo "--- bw: $LABEL  $URL" >>"$LOG"
-    BWT=$(curl -sS -o /dev/null -w "$CURL_TIMING" --max-time "$BW_TIMEOUT" "$URL" 2>>"$LOG" \
-          || echo "ERR ERR ERR ERR ERR 000 0 0")
+    BWT=$(curl -sS -o /dev/null -L -A 'net-debug/1.0' -w "$CURL_TIMING" \
+          --max-time "$BW_TIMEOUT" "$URL" 2>>"$LOG")
+    BWT_RC=$?
+    [ -z "$BWT" ] && BWT="ERR ERR ERR ERR ERR 000 0 0"
     read -r BW_DNS BW_CONN BW_TLS BW_TTFB BW_TOT BW_CODE BW_BYTES BW_SPEED <<<"$BWT"
-    echo "  $LABEL: code=$BW_CODE bytes=$BW_BYTES speed=$BW_SPEED B/s ($(to_mbps "${BW_SPEED:-0}") Mbit/s) total=${BW_TOT}s" >>"$LOG"
+    NOTE=""
+    [ "$BWT_RC" = "28" ] && NOTE="  (curl --max-time hit — measurement based on partial transfer)"
+    [ "$BWT_RC" -ne 0 ] && [ "$BWT_RC" != "28" ] && NOTE="  (curl exit $BWT_RC)"
+    echo "  $LABEL: code=$BW_CODE bytes=$BW_BYTES speed=$BW_SPEED B/s ($(to_mbps "${BW_SPEED:-0}") Mbit/s) total=${BW_TOT}s$NOTE" >>"$LOG"
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$i" "$LABEL" "$BW_CODE" "$BW_BYTES" "$BW_TOT" \
       "$(to_mbps "${BW_SPEED:-0}")" \
