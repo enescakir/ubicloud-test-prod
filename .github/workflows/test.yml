@@ -17,6 +17,20 @@ jobs:
         runs-on:
           - ubicloud-standard-2-ubuntu-2404
           - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
+          - ubicloud-premium-2-ubuntu-2404
+          - ubicloud-premium-2-ubuntu-2204
           - ubuntu-latest
 
     runs-on: ${{ matrix.runs-on }}
@@ -35,6 +49,6 @@ jobs:
         uses: actions/checkout@v6
       - name: check kernel
         run: uname -a
-      - run: ./net-debug.sh
+      - run: ./net-debug.sh 10
       - run: cat netdebug-output/summary.md >> $GITHUB_STEP_SUMMARY
 
