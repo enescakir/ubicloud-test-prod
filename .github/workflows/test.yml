@@ -45,6 +45,6 @@ jobs:
         uses: actions/checkout@v6
       - name: check kernel
         run: uname -a
-      - run: ./net-debug.sh | tee net-debug.log
-      - run: grep -A 20 summary net-debug.log >> $GITHUB_STEP_SUMMARY
+      - run: ./net-debug.sh
+      - run: cat netdebug-output/summary.md >> $GITHUB_STEP_SUMMARY
 
