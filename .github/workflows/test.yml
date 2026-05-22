@@ -24,19 +24,27 @@ jobs:
     steps:
       - name: github curl
         run: |
-          curl -o /dev/null -w "%{speed_download} bytes/s, %{time_total}s\n" -L https://github.com/git/git/archive/refs/tags/v2.45.0.tar.gz
+          echo "Testing download speed from GitHub..." >> $GITHUB_STEP_SUMMARY
+          curl -o /dev/null -w "%{speed_download} bytes/s, %{time_total}s\n" -L https://github.com/git/git/archive/refs/tags/v2.45.0.tar.gz >> $GITHUB_STEP_SUMMARY
 
       - name: cloudflare curl
         run: |
-          curl -o /dev/null -w "%{speed_download} bytes/s, %{time_total}s\n" https://speed.cloudflare.com/__down?bytes=104857600
+          echo "Testing download speed from Cloudflare..." >> $GITHUB_STEP_SUMMARY
+          curl -o /dev/null -w "%{speed_download} bytes/s, %{time_total}s\n" https://speed.cloudflare.com/__down?bytes=104857600 >> $GITHUB_STEP_SUMMARY
       
       - name: aws curl
         run: |
-          curl -o /dev/null -w "%{speed_download} bytes/s, %{time_total}s\n" https://s3.eu-central-1.amazonaws.com/public-test-bucket/100mb.bin
+          echo "Testing download speed from AWS S3..." >> $GITHUB_STEP_SUMMARY
+          curl -o /dev/null -w "%{speed_download} bytes/s, %{time_total}s\n" https://s3.eu-central-1.amazonaws.com/public-test-bucket/100mb.bin >> $GITHUB_STEP_SUMMARY
     
+      - name: mtr
+        run: |
+          echo "Testing network latency and packet loss to github.com..." >> $GITHUB_STEP_SUMMARY
+          sudo mtr -rwbzc 200 -P 443 -T github.com >> $GITHUB_STEP_SUMMARY
       - name: checkout
         uses: actions/checkout@v6
       - name: check kernel
         run: uname -a
-      - run: ./net-debug.sh
+      - run: ./net-debug.sh | tee net-debug.log
+      - run: grep -A 20 summary net-debug.log >> $GITHUB_STEP_SUMMARY
 
