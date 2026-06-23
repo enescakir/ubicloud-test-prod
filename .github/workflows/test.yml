@@ -15,12 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         runs-on:
-          - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2604
           - ubicloud-standard-2-ubuntu-2404
           - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2204
-          - ubuntu-latest
-          - ubuntu-latest
+          - ubuntu-2204
+          - ubuntu-2404
+          - ubuntu-2604
 
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
@@ -31,12 +31,4 @@ jobs:
       - run: uptime -s
       - name: check kernel
         run: uname -a
-
-      - run: |
-          sudo docker run --rm public.ecr.aws/h4m7v9o4/node:24-alpine sh -c 'wget -S -O /dev/null https://repo.yarnpkg.com/4.7.0/packages/yarnpkg-cli/bin/yarn.js 2>&1 | head -30'
-      - run: sudo apt-get update
-      - run: sudo rm -rf /var/lib/apt/lists/*
-      - run: sudo apt-get update
-      - run: sudo apt-get install -y build-essential
-      - run: sudo apt-get install -y vim
-
+      - run: lsb_release -a
