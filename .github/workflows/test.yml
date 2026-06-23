@@ -16,11 +16,17 @@ jobs:
       matrix:
         runs-on:
           - ubicloud-standard-2-ubuntu-2604
+          - ubicloud-standard-2-arm-ubuntu-2604
           - ubicloud-standard-2-ubuntu-2404
+          - ubicloud-standard-2-arm-ubuntu-2404
           - ubicloud-standard-2-ubuntu-2204
-          - ubuntu-2204
-          - ubuntu-2404
-          - ubuntu-2604
+          - ubicloud-standard-2-arm-ubuntu-2204
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+          - ubuntu-26.04
+          - ubuntu-26.04-arm
 
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
@@ -32,3 +38,5 @@ jobs:
       - name: check kernel
         run: uname -a
       - run: lsb_release -a
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y build-essential
