@@ -2,7 +2,7 @@ name: Test Ubicloud Prod Runners
 
 on:
   push:
-    branches: [main]
+    branches: [enes/test-wiz]
   # schedule:
   #   - cron: '0 * * * *'
 
@@ -18,21 +18,9 @@ jobs:
           - ubicloud-standard-2-ubuntu-2604
           - ubicloud-standard-2-ubuntu-2404
           - ubicloud-standard-2-ubuntu-2204
-          - ubicloud-standard-2-ubuntu-2604-arm
-          - ubicloud-standard-2-ubuntu-2404-arm
-          - ubicloud-standard-2-ubuntu-2204-arm
-          - ubicloud-standard-2-ubuntu-2604-arm
-          - ubicloud-standard-2-ubuntu-2404-arm
-          - ubicloud-standard-2-ubuntu-2204-arm
-          - ubicloud-standard-2-ubuntu-2604-arm
-          - ubicloud-standard-2-ubuntu-2404-arm
-          - ubicloud-standard-2-ubuntu-2204-arm
-          - ubuntu-22.04
-          - ubuntu-22.04-arm
-          - ubuntu-24.04
-          - ubuntu-24.04-arm
-          - ubuntu-26.04
-          - ubuntu-26.04-arm
+          - ubicloud-standard-2-arm-ubuntu-2604
+          - ubicloud-standard-2-arm-ubuntu-2404
+          - ubicloud-standard-2-arm-ubuntu-2204
 
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
@@ -40,9 +28,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
 
-      - run: uptime -s
-      - name: check kernel
-        run: uname -a
-      - run: lsb_release -a
-      - run: sudo apt-get update
-      - run: sudo apt-get install -y build-essential
+      - name: Setup Wiz Sensor
+        run: |
+          sudo WIZ_PACKAGE_SKIP_INSTALL=1 \
+            WIZ_API_CLIENT_ID="${{ secrets.WIZ_API_CLIENT_ID }}aa" \
+            WIZ_API_CLIENT_SECRET="${{ secrets.WIZ_API_CLIENT_SECRET }}aa" \
+            bash "/opt/wiz-sensor-install.sh"
