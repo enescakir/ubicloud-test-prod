@@ -16,11 +16,9 @@ jobs:
       matrix:
         runs-on:
           - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-ubuntu-2404-arm
+          - ubicloud-standard-2-arm-ubuntu-2404
           - ubuntu-24.04
           - ubuntu-24.04-arm
-          - ubuntu-26.04
-          - ubuntu-26.04-arm
 
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
@@ -32,4 +30,9 @@ jobs:
       - name: check kernel
         run: uname -a
       - run: lsb_release -a
-      - run: sudo systemctl status sysstat
+      - run: sudo systemctl status lvm2-monitor.service || true
+      - run: sudo systemctl status multipathd.service multipathd.socket || true
+      - run: sudo systemctl status ModemManager.service || true
+      - run: sudo systemctl status phpsessionclean.service phpsessionclean.timer || true
+      - run: sudo systemctl status || true
+      - run: sudo systemctl || true
