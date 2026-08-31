@@ -1,38 +1,103 @@
-name: Test Ubicloud Prod Runners
+name: bun install repro
+
+# Minimal repro / triage for:
+#   error: ConnectionRefused downloading tarball <pkg>
+#   error: FailedToOpenSocket downloading tarball <pkg>
+#
+# Installs 4 tiny packages. Every install step is continue-on-error so a single
+# failure still leaves you with the full picture from one run.
 
 on:
   push:
-    branches: [main]
-  # schedule:
-  #   - cron: '0 * * * *'
 
 jobs:
-  test:
-    # container:
-    #   image: ubuntu:latest
-      # options: --init
-    strategy:
-      fail-fast: false
-      matrix:
-        runs-on:
-          - ubicloud-standard-2-ubuntu-2404
-          - ubicloud-standard-2-arm-ubuntu-2404
-          - ubuntu-24.04
-          - ubuntu-24.04-arm
-
-    runs-on: ${{ matrix.runs-on }}
-    name: ${{ matrix.runs-on }}
+  repro:
+    runs-on: ubicloud-standard-4
     steps:
-      - name: checkout
-        uses: actions/checkout@v6
+      - name: Host and environment
+        run: |
+          echo "host: $(hostname)  arch: $(uname -m)"
+          echo "fd limit: $(ulimit -n)"
+          echo "--- proxy / npm env ---"
+          env | grep -iE 'proxy|npm_config|registry|bun_config' || echo "(none set)"
+          echo "--- resolv.conf ---"
+          cat /etc/resolv.conf
 
-      - run: uptime -s
-      - name: check kernel
-        run: uname -a
-      - run: lsb_release -a
-      - run: sudo systemctl status lvm2-monitor.service || true
-      - run: sudo systemctl status multipathd.service multipathd.socket || true
-      - run: sudo systemctl status ModemManager.service || true
-      - run: sudo systemctl status phpsessionclean.service phpsessionclean.timer || true
-      - run: sudo systemctl status || true
-      - run: sudo systemctl || true
+      - name: Registry reachability without bun
+        run: |
+          getent hosts registry.npmjs.org
+          curl -sS -o /dev/null \
+            -w 'manifest  dns=%{time_namelookup}s connect=%{time_connect}s code=%{http_code}\n' \
+            https://registry.npmjs.org/commander
+          curl -sS -o /dev/null \
+            -w 'tarball   dns=%{time_namelookup}s connect=%{time_connect}s code=%{http_code}\n' \
+            https://registry.npmjs.org/commander/-/commander-14.0.3.tgz
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.2.4'
+
+      - name: Write minimal project
+        run: |
+          mkdir -p /tmp/bun-repro
+          cd /tmp/bun-repro
+          cat > package.json <<'EOF'
+          {
+            "name": "bun-install-repro",
+            "private": true,
+            "dependencies": {
+              "commander": "14.0.3",
+              "picocolors": "1.1.1",
+              "minimist": "1.2.8",
+              "is-number": "7.0.0"
+            }
+          }
+          EOF
+          cat package.json
+
+      # Case 1: clean env, no .env / .npmrc / bunfig.toml in scope.
+      # If this fails, the problem is bun or the runner, not repo config.
+      - name: bun install (clean env)
+        id: clean
+        continue-on-error: true
+        working-directory: /tmp/bun-repro
+        run: |
+          BUN_DEBUG=network bun install --no-cache --verbose
+
+      # Case 2: same install, low concurrency. If case 1 fails and this passes,
+      # suspect socket / fd exhaustion in bun rather than a blocked registry.
+      - name: bun install (network-concurrency 8)
+        if: steps.clean.outcome == 'failure'
+        continue-on-error: true
+        working-directory: /tmp/bun-repro
+        run: |
+          rm -rf node_modules bun.lock bun.lockb
+          bun install --no-cache --network-concurrency 8
+
+      # Case 3: npm as a control. If npm succeeds where bun failed under the
+      # same env, the registry is reachable and bun's client is the difference.
+      - name: npm install control
+        if: steps.clean.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/npm-control
+          cp /tmp/bun-repro/package.json /tmp/npm-control/
+          cd /tmp/npm-control
+          npm install --no-audit --no-fund
+
+      # Case 4: confirm the suspected mechanism. bun loads .env files during
+      # install and honors proxy vars from them. This should fail the same way
+      # the real job did, with an unreachable proxy and no registry involvement.
+      - name: bun install with proxy in .env.production
+        continue-on-error: true
+        working-directory: /tmp/bun-repro
+        run: |
+          rm -rf node_modules bun.lock bun.lockb
+          printf 'HTTPS_PROXY=http://127.0.0.1:3128\nHTTP_PROXY=http://127.0.0.1:3128\n' > .env.production
+          bun install --no-cache || echo "failed (expected if bun reads .env.production)"
+          rm -f .env.production
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "clean install outcome: ${{ steps.clean.outcome }}"
