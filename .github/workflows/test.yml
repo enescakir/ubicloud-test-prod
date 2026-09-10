@@ -30,6 +30,8 @@ jobs:
       - run: uname -a
       - run: sudo apt update
       - run: ls -lah /etc/apt/sources.list.d/
+      - run: cat /etc/apt/sources.list.d/microsoft-prod.list
+      - run: cat /etc/apt/sources.list.d/ubuntu.sources
       - run: lsb_release -a
       - run: sudo systemctl status lvm2-monitor.service || true
       - run: sudo systemctl status multipathd.service multipathd.socket || true
