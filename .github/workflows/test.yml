@@ -17,9 +17,12 @@ jobs:
         runs-on:
           - ubicloud-standard-2-ubuntu-2404
           - ubicloud-standard-2-arm-ubuntu-2404
+          - ubicloud-standard-2-ubuntu-2204
+          - ubicloud-standard-2-arm-ubuntu-2204
           - ubuntu-24.04
           - ubuntu-24.04-arm
-
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.runs-on }}
     steps:
@@ -28,14 +31,7 @@ jobs:
 
       - run: uptime -s
       - run: uname -a
+      - run: sudo cat /etc/apt/apt-mirrors.txt
+      - run: printf "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\nhttps://archive.ubuntu.com/ubuntu/\tpriority:2\nhttps://security.ubuntu.com/ubuntu/\tpriority:3\n" | sudo tee /etc/apt/apt-mirrors.txt
+      - run: sudo cat /etc/apt/apt-mirrors.txt
       - run: sudo apt update
-      - run: ls -lah /etc/apt/sources.list.d/
-      - run: cat /etc/apt/sources.list.d/microsoft-prod.list
-      - run: cat /etc/apt/sources.list.d/ubuntu.sources
-      - run: lsb_release -a
-      - run: sudo systemctl status lvm2-monitor.service || true
-      - run: sudo systemctl status multipathd.service multipathd.socket || true
-      - run: sudo systemctl status ModemManager.service || true
-      - run: sudo systemctl status phpsessionclean.service phpsessionclean.timer || true
-      - run: sudo systemctl status || true
-      - run: sudo systemctl || true
